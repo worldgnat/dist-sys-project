@@ -1,0 +1,5 @@
+grant codeBase "file:/home/2009/nhrist2/network/servercode/" {
+    permission java.security.AllPermission;
+};
+
+
