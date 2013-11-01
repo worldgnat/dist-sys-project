@@ -1,6 +1,7 @@
 package ResImpl;
 import java.rmi.RemoteException;
 import java.util.Enumeration;
+import java.util.Vector;
 
 import LockManager.*;
 
@@ -24,7 +25,7 @@ public class TransactionManager {
 			boolean cusBool = false;
 			boolean flightBool = false;
 			flightBool = lm.Lock (id, Flight.getKey(flightNum), LockManager.WRITE);
-			carBool = lm.Lock (id, Customer.getKey(customerID), LockManager.WRITE);
+			cusBool = lm.Lock (id, Customer.getKey(customerID), LockManager.WRITE);
 			if (cusBool == true && flightBool == true)
 			{ return true; } //mid.reserveFlight(id,customerID,flightNum); }
 			else
@@ -80,7 +81,7 @@ public class TransactionManager {
 		    }
 		    catch (DeadlockException e) { 
 		        //System.out.println ("Deadlock.... ");
-		        return false;;
+		        return false;
 		    }
 		
 	}
@@ -96,7 +97,7 @@ public class TransactionManager {
 			boolean cusBool = false;
 			carBool = lm.Lock (id, Car.getKey(location), LockManager.WRITE);
 			cusBool = lm.Lock (id, Customer.getKey(customerID), LockManager.WRITE);
-			if (cusBool == true && cusBool == true)
+			if (cusBool == true && carBool == true)
 			{ return true; } //mid.reserveCar(id,customerID,location); }
 			else
 			{ return false; }
@@ -233,15 +234,17 @@ public class TransactionManager {
 	
 	/**************************************
 	 *         CUSTOMERS
+	 * @throws RemoteException 
 	 **************************************/
 	
-	public boolean deleteCustomer(int id, int customerID)
+	public boolean deleteCustomer(int id, int customerID) throws RemoteException
 	{
 		try{
 			boolean cusBool = false;
 			boolean reservedItemBool = false;
 			
 			cusBool = lm.Lock(id, Customer.getKey(customerID), LockManager.WRITE);
+			@SuppressWarnings("unchecked")
 			Enumeration<ReservedItem> custRes = mid.getCustomerReservations(id, customerID).elements();
 			
 			for(; custRes.hasMoreElements();)
@@ -263,7 +266,7 @@ public class TransactionManager {
 		    }
 	}
 	
-	public boolean queryCustomerInfo(int id, int customerID)
+	public boolean queryCustomerInfo(int id, int customerID) throws RemoteException
 	{
 		try{
 			boolean cusBool = false;
@@ -286,7 +289,7 @@ public class TransactionManager {
 			boolean carBool = false;
 			boolean flightBool = false;
 			
-			custbool = lm.Lock(id, Customer.getKey(customerID), LockManager.WRITE);
+			cusBool = lm.Lock(id, Customer.getKey(customer), LockManager.WRITE);
 			
 			if (car==true)
 	    	{
