@@ -64,7 +64,7 @@ public class LockManager
                             // lock conversion 
                             // *** ADD CODE HERE *** to carry out the lock conversion in the
                             // lock table
-                        	this.lockTable.get(dataObj).setLockType(DataObj.WRITE);
+                        	((DataObj)this.lockTable.get(dataObj)).setLockType(DataObj.WRITE);
                         } else {
                             // a lock request that is not lock conversion
                             this.lockTable.add(trxnObj);
