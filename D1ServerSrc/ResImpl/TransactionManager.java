@@ -18,12 +18,17 @@ public class TransactionManager {
 	/*********************************
 	*****        FLIGHTS            ****
 	*********************************/
-	public boolean reserveFlight(int id, int customerID, int flightNum) throws RemoteException
+	public boolean reserveFlight(int id, int customerID, int flightNum)
 	{
 		try {
-			lm.Lock (id, Flight.getKey(flightNum), LockManager.WRITE);
-			lm.Lock (id, Customer.getKey(customerID), LockManager.WRITE);
-			return mid.reserveFlight(id,customerID,flightNum);
+			boolean cusBool = false;
+			boolean flightBool = false;
+			flightBool = lm.Lock (id, Flight.getKey(flightNum), LockManager.WRITE);
+			carBool = lm.Lock (id, Customer.getKey(customerID), LockManager.WRITE);
+			if (cusBool == true && flightBool == true)
+			{ return true; } //mid.reserveFlight(id,customerID,flightNum); }
+			else
+			{ return false; }
 		    }
 		    catch (DeadlockException e) { 
 		        //System.out.println ("Deadlock.... ");
@@ -31,39 +36,51 @@ public class TransactionManager {
 		    }
 	}
 	
-	public boolean deleteFlight(int id, int flightNum) throws RemoteException
+	public boolean deleteFlight(int id, int flightNum) 
 	{
 		try {
-			lm.Lock (id, Flight.getKey(flightNum), LockManager.WRITE);
-			return mid.deleteFlight(id,flightNum);
+			boolean flightBool = false;
+			flightBool = lm.Lock (id, Flight.getKey(flightNum), LockManager.WRITE);
+			if (flightBool)
+			{ return true; } //mid.deleteFlight(id,flightNum); }
+			else
+			{ return false; }
 		    }
 		    catch (DeadlockException e) { 
 		        //System.out.println ("Deadlock.... ");
 		        return false;
 		    }
 	}
-	public int queryFlight(int id, int flightNum) throws RemoteException
+	public boolean queryFlight(int id, int flightNum) 
 	{
 		try {
-			lm.Lock (id, Flight.getKey(flightNum), LockManager.READ);
-			return mid.queryFlight(id,flightNum);
+			boolean flightBool = false;
+			flightBool = lm.Lock (id, Flight.getKey(flightNum), LockManager.READ);
+			if (flightBool)
+			{ return true; } //mid.queryFlight(id,flightNum); }
+			else
+			{ return false; }
 		    }
 		    catch (DeadlockException e) { 
 		        //System.out.println ("Deadlock.... ");
-		        return -1;
+		        return false;
 		    }
 		
 	}
 	
-	public int queryFlightPrice(int id, int flightNum) throws RemoteException
+	public boolean queryFlightPrice(int id, int flightNum) 
 	{
 		try {
-			lm.Lock (id, Flight.getKey(flightNum), LockManager.READ);
-			return mid.queryFlightPrice(id,flightNum);
+			boolean flightBool = false;
+			flightBool = lm.Lock (id, Flight.getKey(flightNum), LockManager.READ);
+			if (flightBool)
+			{ return true; } //mid.queryFlightPrice(id,flightNum); }
+			else
+			{ return false; }
 		    }
 		    catch (DeadlockException e) { 
 		        //System.out.println ("Deadlock.... ");
-		        return -1;
+		        return false;;
 		    }
 		
 	}
@@ -72,12 +89,17 @@ public class TransactionManager {
 	*****        CARS            ****
 	*********************************/
 	
-	public boolean reserveCar(int id, int customerID, String location) throws RemoteException
+	public boolean reserveCar(int id, int customerID, String location)
 	{
 		try {
-			lm.Lock (id, Car.getKey(location), LockManager.WRITE);
-			lm.Lock (id, Customer.getKey(customerID), LockManager.WRITE);
-			return mid.reserveCar(id,customerID,location);
+			boolean carBool = false;
+			boolean cusBool = false;
+			carBool = lm.Lock (id, Car.getKey(location), LockManager.WRITE);
+			cusBool = lm.Lock (id, Customer.getKey(customerID), LockManager.WRITE);
+			if (cusBool == true && cusBool == true)
+			{ return true; } //mid.reserveCar(id,customerID,location); }
+			else
+			{ return false; }
 		    }
 		    catch (DeadlockException e) { 
 		        //System.out.println ("Deadlock.... ");
@@ -85,11 +107,15 @@ public class TransactionManager {
 		    }
 	}
 	
-	public boolean deleteCars(int id, String location) throws RemoteException
+	public boolean deleteCars(int id, String location) 
 	{
 		try {
-			lm.Lock (id,  Car.getKey(location), LockManager.WRITE);
-			return mid.deleteCars(id,location);
+			boolean carBool = false;
+			carBool = lm.Lock (id,  Car.getKey(location), LockManager.WRITE);
+			if (carBool)
+			{ return true; } //mid.deleteCars(id,location); }
+			else
+			{ return false; }
 		    }
 		    catch (DeadlockException e) { 
 		        //System.out.println ("Deadlock.... ");
@@ -97,28 +123,36 @@ public class TransactionManager {
 		    }
 	}
 	
-	public int queryCars(int id, String location) throws RemoteException
+	public boolean queryCars(int id, String location) 
 	{
 		try {
-			lm.Lock (id,  Car.getKey(location), LockManager.READ);
-			return mid.queryCars(id,location);
+			boolean carBool = false;
+			carBool = lm.Lock (id,  Car.getKey(location), LockManager.READ);
+			if (carBool)
+			{ return true; }//mid.queryCars(id,location); }
+			else
+			{ return false; }
 		    }
 		    catch (DeadlockException e) { 
 		        //System.out.println ("Deadlock.... ");
-		        return -1;
+		        return false;
 		    }
 		
 	}
 	
-	public int queryCarsPrice(int id, String location) throws RemoteException
+	public boolean queryCarsPrice(int id, String location)
 	{
 		try {
-			lm.Lock (id,  Car.getKey(location), LockManager.READ);
-			return mid.queryCarsPrice(id,location);
+			boolean carBool = false;
+			carBool = lm.Lock (id,  Car.getKey(location), LockManager.READ);
+			if (carBool)
+				{ return true;} //mid.queryCarsPrice(id,location); }
+			else
+			{ return false; }
 		    }
 		    catch (DeadlockException e) { 
 		        //System.out.println ("Deadlock.... ");
-		        return -1;
+		        return false;
 		    }
 		
 	}
@@ -129,23 +163,32 @@ public class TransactionManager {
 	*********************************/
 	
 	
-	public boolean reserveRoom(int id, int customerID, String location) throws RemoteException
+	public boolean reserveRoom(int id, int customerID, String location)
 	{
 		try {
-			lm.Lock (id, Hotel.getKey(location), LockManager.WRITE);
-			lm.Lock (id, Customer.getKey(customerID), LockManager.WRITE);
-			return mid.reserveRoom(id,customerID,location);
+			boolean cusBool = false;
+			boolean roomBool = false;
+			roomBool = lm.Lock (id, Hotel.getKey(location), LockManager.WRITE);
+			cusBool = lm.Lock (id, Customer.getKey(customerID), LockManager.WRITE);
+			if (cusBool == true && roomBool == true)
+				{ return true; }//mid.reserveRoom(id,customerID,location); }
+			else
+			{ return false; }
 		    }
 		    catch (DeadlockException e) { 
 		        //System.out.println ("Deadlock.... ");
 		        return false;
 		    }
 	}
-	public boolean deleteRooms(int id, String location) throws RemoteException
+	public boolean deleteRooms(int id, String location)
 	{
 		try {
-			lm.Lock (id,Hotel.getKey(location), LockManager.WRITE);
-			return mid.deleteRooms(id,location);
+			boolean roomBool = false;
+			roomBool = lm.Lock (id,Hotel.getKey(location), LockManager.WRITE);
+			if (roomBool)
+				{ return true;}//mid.deleteRooms(id,location); }
+			else
+				{ return false; }
 		    }
 		    catch (DeadlockException e) { 
 		        //System.out.println ("Deadlock.... ");
@@ -153,28 +196,36 @@ public class TransactionManager {
 		    }
 	}
 	
-	public int queryRooms(int id, String location) throws RemoteException
+	public boolean queryRooms(int id, String location)
 	{
 		try {
-			lm.Lock (id,Hotel.getKey(location), LockManager.READ);
-			return mid.queryRooms(id,location);
+			boolean roomBool = false;
+			roomBool = lm.Lock (id,Hotel.getKey(location), LockManager.READ);
+				if (roomBool)
+					{ return true; }//mid.queryRooms(id,location); }
+				else
+					{ return false; }
 		    }
 		    catch (DeadlockException e) { 
 		        //System.out.println ("Deadlock.... ");
-		        return -1;
+		        return false;
 		    }
 		
 	}
 	
-	public int queryRoomsPrice(int id, String location) throws RemoteException
+	public boolean queryRoomsPrice(int id, String location) 
 	{
 		try {
-			lm.Lock (id,Hotel.getKey(location), LockManager.READ);
-			return mid.queryRoomsPrice(id,location);
+			boolean roomBool = false;
+			roomBool = lm.Lock (id,Hotel.getKey(location), LockManager.READ);
+				if(roomBool)
+				{ return true; } //mid.queryRoomsPrice(id,location); }
+				else
+				{ return false; }
 		    }
 		    catch (DeadlockException e) { 
 		        //System.out.println ("Deadlock.... ");
-		        return -1;
+		        return false;
 		    }
 		
 	}
@@ -184,19 +235,27 @@ public class TransactionManager {
 	 *         CUSTOMERS
 	 **************************************/
 	
-	public boolean deleteCustomer(int id, int customerID) throws RemoteException
+	public boolean deleteCustomer(int id, int customerID)
 	{
 		try{
-			lm.Lock(id, Customer.getKey(customerID), LockManager.WRITE);
+			boolean cusBool = false;
+			boolean reservedItemBool = false;
+			
+			cusBool = lm.Lock(id, Customer.getKey(customerID), LockManager.WRITE);
 			Enumeration<ReservedItem> custRes = mid.getCustomerReservations(id, customerID).elements();
 			
 			for(; custRes.hasMoreElements();)
 			{
 				ReservedItem current = custRes.nextElement();
-				lm.Lock(id, current.getKey(), LockManager.WRITE);
+				reservedItemBool = lm.Lock(id, current.getKey(), LockManager.WRITE);
 			}
 			
-			return mid.deleteCustomer(id, customerID);
+			
+			if (cusBool && reservedItemBool)
+			{ return true; }//mid.deleteCustomer(id, customerID); }
+			
+			else
+			{ return false; }
 		}
 		 catch (DeadlockException e) { 
 		        //System.out.println ("Deadlock.... ");
@@ -204,16 +263,62 @@ public class TransactionManager {
 		    }
 	}
 	
-	public String queryCustomerInfo(int id, int customerID) throws RemoteException
+	public boolean queryCustomerInfo(int id, int customerID)
 	{
 		try{
-			lm.Lock(id, Customer.getKey(customerID), LockManager.READ);
-			return mid.queryCustomerInfo(id, customerID);
+			boolean cusBool = false;
+			cusBool = lm.Lock(id, Customer.getKey(customerID), LockManager.READ);
+			
+			return cusBool;
 		}
 		
 		catch (DeadlockException e) { 
 	        //System.out.println ("Deadlock.... ");
-	        return "Deadlock";
+	        return false;
+	    }
+	}
+	
+	public boolean itinerary(int id,int customer,Vector flightNumbers,String location,boolean car,boolean room)
+	{
+		try{
+			boolean cusBool = false;
+			boolean roomBool = false;
+			boolean carBool = false;
+			boolean flightBool = false;
+			
+			custbool = lm.Lock(id, Customer.getKey(customerID), LockManager.WRITE);
+			
+			if (car==true)
+	    	{
+				carBool = lm.Lock (id, Car.getKey(location), LockManager.WRITE);
+	    	}
+	    	
+	    	if (room==true)
+	    	{
+	    		roomBool = lm.Lock (id, Hotel.getKey(location), LockManager.WRITE);
+	    	}
+			
+			for (int i=0; i <flightNumbers.size(); i++)
+	    	{ 
+	    		int flightNum = Integer.parseInt((String)flightNumbers.get(i));
+	    		flightBool = lm.Lock (id, Flight.getKey(flightNum), LockManager.WRITE);
+	    	}
+			
+	    	
+	    	if (cusBool && carBool && roomBool && flightBool)
+	    	{
+	    		return true;
+	    	}
+	    	
+	    	else
+	    	{
+	    		return false;
+	    	}
+		}
+		
+		catch (DeadlockException e) { 
+	        //System.out.println ("Deadlock.... ");
+	        return false;
 	    }
 	}
 }
