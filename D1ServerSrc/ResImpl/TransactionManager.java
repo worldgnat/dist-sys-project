@@ -1,6 +1,8 @@
 package ResImpl;
 import java.rmi.RemoteException;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Vector;
 
 import LockManager.*;
@@ -9,12 +11,33 @@ public class TransactionManager {
 	
 	LockManager lm;
 	Middleware mid = null;
+	List<Integer> tList = null;
 	
-	public TransactionManager(Middleware creator){
+	public TransactionManager(/*Middleware creator*/){
 		lm = new LockManager();
-		mid = creator;
+		tList = new ArrayList<Integer>();
+		//mid = creator;
 	}
 	
+	
+	/****************************
+	 * Transaction functions **
+	 ******************************/
+
+	public void start(int tid)
+	{
+		if (!tList.contains(tid))
+		{
+			tList.add(tid);
+		}
+	}
+	
+	public void commit(int tid)
+	{
+		lm.UnlockAll(tid);
+		int index = tList.indexOf((Integer)tid);
+		tList.remove(index);
+	}
 	
 	/*********************************
 	*****        FLIGHTS            ****
@@ -236,7 +259,7 @@ public class TransactionManager {
 	 *         CUSTOMERS
 	 * @throws RemoteException 
 	 **************************************/
-	
+	/*
 	public boolean deleteCustomer(int id, int customerID) throws RemoteException
 	{
 		try{
@@ -264,9 +287,9 @@ public class TransactionManager {
 		        //System.out.println ("Deadlock.... ");
 		        return false;
 		    }
-	}
+	}*/
 	
-	public boolean queryCustomerInfo(int id, int customerID) throws RemoteException
+	public boolean queryCustomerInfo(int id, int customerID)
 	{
 		try{
 			boolean cusBool = false;
