@@ -11,7 +11,7 @@ public class TransactionManager {
 	
 	LockManager lm;
 	Middleware mid = null;
-	List<Integer> tList = null;
+	List<Integer> tList = null;    // List that keeps track of all transactions
 	
 	public TransactionManager(/*Middleware creator*/){
 		lm = new LockManager();
@@ -28,13 +28,15 @@ public class TransactionManager {
 	{
 		if (!tList.contains(tid))
 		{
-			tList.add(tid);
+			tList.add(tid);   // we enlist the transaction
 		}
+		
 	}
 	
+	// Release all the locks and remove the transaction from the list
 	public void commit(int tid)
 	{
-		lm.UnlockAll(tid);
+		lm.UnlockAll(tid);                          
 		int index = tList.indexOf((Integer)tid);
 		tList.remove(index);
 	}
@@ -45,6 +47,10 @@ public class TransactionManager {
 	public boolean reserveFlight(int id, int customerID, int flightNum)
 	{
 		try {
+			
+			// Obtain locks for the customer and flight objects. If you have both
+			// then you return true. YOU NEED WRITE LOCKS SINCE YOU CHANGE
+			// THE NUMBER OF SEATS AND THE RESERVATIONS OF THE CUSTOMER.
 			boolean cusBool = false;
 			boolean flightBool = false;
 			flightBool = lm.Lock (id, Flight.getKey(flightNum), LockManager.WRITE);
@@ -63,6 +69,7 @@ public class TransactionManager {
 	public boolean deleteFlight(int id, int flightNum) 
 	{
 		try {
+			// Obtain a WRITE lock since you are deleting the flight
 			boolean flightBool = false;
 			flightBool = lm.Lock (id, Flight.getKey(flightNum), LockManager.WRITE);
 			if (flightBool)
@@ -78,6 +85,7 @@ public class TransactionManager {
 	public boolean queryFlight(int id, int flightNum) 
 	{
 		try {
+			// We only need a READ lock for the flight
 			boolean flightBool = false;
 			flightBool = lm.Lock (id, Flight.getKey(flightNum), LockManager.READ);
 			if (flightBool)
@@ -95,6 +103,7 @@ public class TransactionManager {
 	public boolean queryFlightPrice(int id, int flightNum) 
 	{
 		try {
+			// We only need a READ lock since we wish to know the price
 			boolean flightBool = false;
 			flightBool = lm.Lock (id, Flight.getKey(flightNum), LockManager.READ);
 			if (flightBool)
@@ -116,6 +125,8 @@ public class TransactionManager {
 	public boolean reserveCar(int id, int customerID, String location)
 	{
 		try {
+			// Obtain a WRITE lock on the car and customer objects because you need
+			// to change the reservations and number of cars values
 			boolean carBool = false;
 			boolean cusBool = false;
 			carBool = lm.Lock (id, Car.getKey(location), LockManager.WRITE);
@@ -134,6 +145,9 @@ public class TransactionManager {
 	public boolean deleteCars(int id, String location) 
 	{
 		try {
+			// Only need a WRITE lock on the car object. If the customer still
+			// exists, then the middleware will reject the query anyways. Therefore
+			// we don't need to worry about the customers who reserved the cars.
 			boolean carBool = false;
 			carBool = lm.Lock (id,  Car.getKey(location), LockManager.WRITE);
 			if (carBool)
@@ -150,6 +164,7 @@ public class TransactionManager {
 	public boolean queryCars(int id, String location) 
 	{
 		try {
+			// Only need a READ lock
 			boolean carBool = false;
 			carBool = lm.Lock (id,  Car.getKey(location), LockManager.READ);
 			if (carBool)
@@ -167,6 +182,7 @@ public class TransactionManager {
 	public boolean queryCarsPrice(int id, String location)
 	{
 		try {
+			// Only need a READ lock
 			boolean carBool = false;
 			carBool = lm.Lock (id,  Car.getKey(location), LockManager.READ);
 			if (carBool)
@@ -190,6 +206,7 @@ public class TransactionManager {
 	public boolean reserveRoom(int id, int customerID, String location)
 	{
 		try {
+			// We need an exclusive lock on both customer and room
 			boolean cusBool = false;
 			boolean roomBool = false;
 			roomBool = lm.Lock (id, Hotel.getKey(location), LockManager.WRITE);
@@ -207,6 +224,7 @@ public class TransactionManager {
 	public boolean deleteRooms(int id, String location)
 	{
 		try {
+			// Need an exclusive lock on the room
 			boolean roomBool = false;
 			roomBool = lm.Lock (id,Hotel.getKey(location), LockManager.WRITE);
 			if (roomBool)
@@ -223,6 +241,7 @@ public class TransactionManager {
 	public boolean queryRooms(int id, String location)
 	{
 		try {
+			// Need a shared lock on the room
 			boolean roomBool = false;
 			roomBool = lm.Lock (id,Hotel.getKey(location), LockManager.READ);
 				if (roomBool)
@@ -240,6 +259,7 @@ public class TransactionManager {
 	public boolean queryRoomsPrice(int id, String location) 
 	{
 		try {
+			// Only need a shared lock on the room
 			boolean roomBool = false;
 			roomBool = lm.Lock (id,Hotel.getKey(location), LockManager.READ);
 				if(roomBool)
@@ -263,13 +283,18 @@ public class TransactionManager {
 	public boolean deleteCustomer(int id, int customerID) throws RemoteException
 	{
 		try{
+			// In here, we need exclusive locks on the customer as well
+			// any flights, cars, rooms that he/she has reserved.
 			boolean cusBool = false;
 			boolean reservedItemBool = false;
 			
 			cusBool = lm.Lock(id, Customer.getKey(customerID), LockManager.WRITE);
+			
+			
 			@SuppressWarnings("unchecked")
 			Enumeration<ReservedItem> custRes = mid.getCustomerReservations(id, customerID).elements();
 			
+			// Acquire exclusive locks on all reserved items
 			for(; custRes.hasMoreElements();)
 			{
 				ReservedItem current = custRes.nextElement();
@@ -292,6 +317,7 @@ public class TransactionManager {
 	public boolean queryCustomerInfo(int id, int customerID)
 	{
 		try{
+			// Only need a shared lock on the customer
 			boolean cusBool = false;
 			cusBool = lm.Lock(id, Customer.getKey(customerID), LockManager.READ);
 			
@@ -307,6 +333,8 @@ public class TransactionManager {
 	public boolean itinerary(int id,int customer,Vector flightNumbers,String location,boolean car,boolean room)
 	{
 		try{
+			
+			// We need exclusive locks on the customer, hotel, car AND every flight in the vector
 			boolean cusBool = false;
 			boolean roomBool = false;
 			boolean carBool = false;
@@ -348,3 +376,54 @@ public class TransactionManager {
 	    }
 	}
 }
+/*
+ class Hotel_Car_Tuple{
+	String location;
+	int numItems;
+	int price;
+	
+	public Hotel_Car_Tuple(String location, int numItems, int price){
+		this.numItems = numItems;
+		this.location = location;
+		this.price = price;
+	}
+	
+	public String getLocation(){
+		return this.location;
+	}
+	public int getNumItems(){
+		return this.numItems;
+	}
+	public int getPrice(){
+		return this.price;
+	}
+}
+ 
+ class Flight_Tuple{
+	 int flightNum;
+	 int numSeats;
+	 int price;
+	 
+	 public Flight_Tuple(int flightNum, int numSeats, int price){
+		 this.flightNum = flightNum;
+		 this.numSeats = numSeats;
+		 this.price = price;
+	 }
+	 
+	 public int getFlightNum(){
+		 return this.flightNum;
+	 }
+	 public int getSeats(){
+		 return this.numSeats;
+	 }
+	 public int getPrice(){
+		 return this.price;
+	 }
+ }
+ 
+ class Customer_Tuple{
+	 int custId;
+	 public Customer_Tuple(){
+		 
+	 }
+ }*/
