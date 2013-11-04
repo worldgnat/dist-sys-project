@@ -10,3 +10,6 @@
 /ReservedItem.class
 /ResourceManagerImpl.class
 /Trace.class
+/TransactionManager.class
+/TransactionKicker.class
+/NonExistantTransactionException.class

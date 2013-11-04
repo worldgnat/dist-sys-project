@@ -7,7 +7,7 @@ package ResImpl;
 import ResInterface.*;
 
 import java.util.*;
-
+import java.util.concurrent.LinkedBlockingQueue;
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.RemoteException;
@@ -18,6 +18,7 @@ public class ResourceManagerImpl implements ResourceManager
 {
     
     protected RMHashtable m_itemHT = new RMHashtable();
+    protected TreeMap<Integer, Queue<Object[]>> openTransactions = new TreeMap<Integer, Queue<Object[]>>();
 
 
     public static void main(String args[]) {
@@ -69,18 +70,61 @@ public class ResourceManagerImpl implements ResourceManager
     }
 
     // Writes a data item
-    private void writeData( int id, String key, RMItem value )
+    private void writeData(int id, String key, RMItem value)
     {
-        synchronized(m_itemHT) {
-            m_itemHT.put(key, value);
+        synchronized(openTransactions) {
+//            m_itemHT.put(key, value);
+        	Object[] values = {key, value};
+        	if (openTransactions.containsKey(id)) {
+        		//If the transaction is already opened, enqueue this update
+        		openTransactions.get(id).add(values);
+        	}
+        	else { //Otherwise, create a queue for the transaction, enqueue the update, and put the transaction in the openTransactions tree.
+        		Queue<Object[]> temp = new LinkedBlockingQueue<Object[]>();
+        		temp.add(values);
+                openTransactions.put(id, temp);
+        	}
         }
+    }
+    
+    @SuppressWarnings("unchecked")
+	public void commit(int tid) {
+    	synchronized(openTransactions) {
+    		Queue<Object[]> queue = openTransactions.get(tid);
+    		synchronized(m_itemHT) {
+    			//Pop updates to the HashTable from this transaction's queue
+    			Object[] values;
+    			while (!queue.isEmpty()) { 
+    				values = queue.remove();
+    				if (values[1] != null) //If this value is null, we want to remove (by convention)
+    					m_itemHT.put((Integer)values[0], (RMItem)values[1]);
+    				else //Otherwise, we're adding values
+    					m_itemHT.remove((Integer)values[0]);
+    			}
+    		}
+    		//The transaction is now closed, so delete it.
+    		openTransactions.remove(tid);
+    	}
+    }
+    
+    public void abort(int tid) {
+    	synchronized(openTransactions) {
+    		openTransactions.remove(tid);
+    	}
     }
     
     // Remove the item out of storage
     protected RMItem removeData(int id, String key) {
         synchronized(m_itemHT) {
-            return (RMItem)m_itemHT.remove(key);
+            synchronized(openTransactions) {
+              Queue<Object[]> temp = new LinkedBlockingQueue<Object[]>();
+              //A null value means we want to remove this object (by convention)
+              Object[] values = {key, null};
+              temp.add(values);
+              openTransactions.put(id, temp);
+            }
         }
+        return (RMItem)m_itemHT.get(key);
     }
     
     

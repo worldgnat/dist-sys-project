@@ -1,6 +1,5 @@
 package ResInterface;
 
-
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
@@ -23,6 +22,16 @@ import java.util.*;
 
 public interface ResourceManager extends Remote 
 {
+	/*
+	 * Commits the given transaction on this RM.
+	 */
+	public void commit(int tid);
+	
+	/*
+	 * Aborts the given transaction on this RM.
+	 */
+	public void abort(int tid);
+	
     /* Add seats to a flight.  In general this will be used to create a new
      * flight, but it should be possible to add seats to an existing flight.
      * Adding to an existing flight should overwrite the current price of the

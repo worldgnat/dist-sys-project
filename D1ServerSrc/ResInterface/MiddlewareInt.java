@@ -8,6 +8,16 @@ import java.util.*;
 
 public interface MiddlewareInt extends Remote
 {
+	/*
+	 * Commits the given transaction on this RM.
+	 */
+	public void commit(int tid);
+	
+	/*
+	 * Aborts the given transaction on this RM.
+	 */
+	public void abort(int tid);
+	
 	/* reserve a car at this location */
     public boolean reserveCar(int id, int customer, String location) 
 	throws RemoteException; 
