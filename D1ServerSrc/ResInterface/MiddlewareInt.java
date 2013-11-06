@@ -11,12 +11,12 @@ public interface MiddlewareInt extends Remote
         /*
          * Commits the given transaction on this RM.
          */
-        public void commit(int tid);
-        
+        public void commit(int tid) throws RemoteException;
+        public void start(int tid) throws RemoteException;
         /*
          * Aborts the given transaction on this RM.
          */
-        public void abort(int tid);
+        public void abort(int tid) throws RemoteException;
         
         /* reserve a car at this location */
     public boolean reserveCar(int id, int customer, String location)

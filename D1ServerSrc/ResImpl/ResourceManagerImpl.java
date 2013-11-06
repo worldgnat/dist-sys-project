@@ -64,9 +64,29 @@ public class ResourceManagerImpl implements ResourceManager
     // Reads a data item
     private RMItem readData( int id, String key )
     {
-        synchronized(m_itemHT) {
-            return (RMItem) m_itemHT.get(key);
-        }
+	// If the transaction has never had a WRITE on KEY, just read whatever is in the hastable
+	if (!openTransactions.containsKey(key))
+	{
+        	synchronized(m_itemHT) {
+            		return (RMItem) m_itemHT.get(key);
+        	}
+	}
+
+	// If the transactions has had a WRITE, go through openTransactions and retrieve the NEWEST WRITE
+	// The READ will return that value
+	else
+	{
+		Queue<Object[]> queries = openTransactions.get(key);
+		// Iterate through the queue of queries
+		Iterator<Object[]> itr = queries.iterator();
+		Object[] lastWrite = null;
+		while(itr.hasNext())
+		{
+			lastWrite = itr.next();
+		}
+
+		return (RMItem) lastWrite[1];
+	}
     }
 
     // Writes a data item
@@ -88,8 +108,10 @@ public class ResourceManagerImpl implements ResourceManager
     }
     
     @SuppressWarnings("unchecked")
-        public void commit(int tid) {
+        public void commit(int tid) throws RemoteException{
             synchronized(openTransactions) {
+		if (openTransactions.containsKey(tid))
+		{
                     Queue<Object[]> queue = openTransactions.get(tid);
                     synchronized(m_itemHT) {
                             //Pop updates to the HashTable from this transaction's queue
@@ -97,18 +119,20 @@ public class ResourceManagerImpl implements ResourceManager
                             while (!queue.isEmpty()) {
                                     values = queue.remove();
                                     if (values[1] != null) //If this value is null, we want to remove (by convention)
-                                            m_itemHT.put((Integer)values[0], (RMItem)values[1]);
+                                            m_itemHT.put(values[0], (RMItem)values[1]);
                                     else //Otherwise, we're adding values
-                                            m_itemHT.remove((Integer)values[0]);
+                                            m_itemHT.remove(values[0]);
                             }
                     }
                     //The transaction is now closed, so delete it.
                     openTransactions.remove(tid);
+		}
             }
     }
     
-    public void abort(int tid) {
+    public void abort(int tid) throws RemoteException{
             synchronized(openTransactions) {
+		if (openTransactions.containsKey(tid))
                     openTransactions.remove(tid);
             }
     }

@@ -3,7 +3,7 @@ package ResImpl;
 import ResInterface.*;
 
 import java.util.*;
-
+import java.util.concurrent.LinkedBlockingQueue;
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.RemoteException;
@@ -21,6 +21,7 @@ public class Middleware implements MiddlewareInt{
         protected static ResourceManager rmRooms = null; // RM for the rooms
         protected static ResourceManager rmFlights = null; // RM for the flights
         protected TransactionManager tM;
+	protected TreeMap<Integer, Queue<Object[]>> openTransactions = new TreeMap<Integer, Queue<Object[]>>();
 
         public static void main(String args[]) {
                 String server="localhost";
@@ -29,7 +30,7 @@ public class Middleware implements MiddlewareInt{
                 // The server names and ports for each RM
                 String serverCars="open-13.cs.mcgill.ca";
                 String serverRooms="open-10.cs.mcgill.ca";
-                String serverFlights="open-12.cs.mcgill.ca";
+                String serverFlights="open-14.cs.mcgill.ca";
                 int portCars = 4030;
                 int portRooms = 1030;
                 int portFlights = 2030;
@@ -101,22 +102,45 @@ public class Middleware implements MiddlewareInt{
                 tM = new ResImpl.TransactionManager(this);
         }
         
-        public void start(int tid) {
+        public void start(int tid) throws RemoteException{
                 tM.start(tid);
         }
 
-        public void commit(int tid) {
+        public void commit(int tid) throws RemoteException{
                 tM.commit(tid);
                 rmFlights.commit(tid);
                 rmCars.commit(tid);
                 rmRooms.commit(tid);
-        }
+		
+		synchronized (openTransactions){
+		    if (openTransactions.containsKey(tid))
+		    {
+			Queue<Object[]> queue = openTransactions.get(tid);
+			synchronized (m_itemHT){
+				Object[] values;
+				while(!queue.isEmpty()){
+					values = queue.remove();
+					if (values[1] != null)
+					{ m_itemHT.put(values[0], (RMItem)values[1]); }
+					else
+					{ m_itemHT.remove(values[0]);}
+			        }
+	          	}
 
-        public void abort(int tid) {
+			openTransactions.remove(tid);
+		     }
+       		 }
+	}
+        public void abort(int tid) throws RemoteException{
                 rmFlights.abort(tid);
                 rmCars.abort(tid);
                 rmRooms.abort(tid);
                 tM.abort(tid);
+		
+		synchronized(openTransactions){
+			if (openTransactions.containsKey(tid))
+			openTransactions.remove(tid);
+		}
         }
 
 
@@ -153,14 +177,20 @@ public class Middleware implements MiddlewareInt{
         public boolean deleteFlight(int id, int flightNum)
                         throws RemoteException
                         {
-                return (rmFlights.deleteFlight(id, flightNum));
+				if (tM.deleteFlight(id,flightNum))
+                			return (rmFlights.deleteFlight(id, flightNum));
+				else
+					return false;
                         }
 
         // Returns the number of empty seats on this flight
         public int queryFlight(int id, int flightNum)
                         throws RemoteException
                         {
-                return (rmFlights.queryFlight(id, flightNum));
+				if (tM.queryFlight(id,flightNum))
+                			return (rmFlights.queryFlight(id, flightNum));
+				else
+					return -1;
                         }
 
 
@@ -169,7 +199,10 @@ public class Middleware implements MiddlewareInt{
         public int queryFlightPrice(int id, int flightNum )
                         throws RemoteException
                         {
-                return (rmFlights.queryFlightPrice(id,flightNum));
+				if (tM.queryFlightPrice(id,flightNum))
+               				 return (rmFlights.queryFlightPrice(id,flightNum));
+				else
+					return -1;
                         }
 
 
@@ -260,14 +293,20 @@ return true;
         public boolean deleteCars(int id, String location)
                         throws RemoteException
                         {
-                return (rmCars.deleteCars(id,location));
+				if (tM.deleteCars(id,location))
+               				 return (rmCars.deleteCars(id,location));
+				else
+					return false;
                         }
 
         // Returns the number of cars available at a location
         public int queryCars(int id, String location)
                         throws RemoteException
                         {
-                return (rmCars.queryCars(id,location));
+				if (tM.queryCars(id,location))
+                			{return (rmCars.queryCars(id,location));}
+				else
+					return -1;
                         }
 
 
@@ -275,21 +314,29 @@ return true;
         public int queryCarsPrice(int id, String location)
                         throws RemoteException
                         {
-                return (rmCars.queryCarsPrice(id,location));
+				if (tM.queryCarsPrice(id,location))
+                			{return (rmCars.queryCarsPrice(id,location));}
+				else
+					return -1;
                         }
 
 
         public boolean reserveCar(int id, int customerID, String location)
                         throws RemoteException
-                        {
-                boolean result = rmCars.reserveCar(id,customerID,location);
-                if (result)
-                {
-                        reserveItem(id, customerID, Car.getKey(location), location,queryCarsPrice(id,location));
-                        return result;
-                }
-                else { return result; }
-                        }
+        {
+			if (tM.reserveCar(id,customerID,location))
+			{
+                		boolean result = rmCars.reserveCar(id,customerID,location);
+               			 if (result)
+                		 {
+                        		reserveItem(id, customerID, Car.getKey(location), location,queryCarsPrice(id,location));
+                        		return result;
+                		 }
+                		 else { return result; }
+			}
+			else
+				{return false;}
+        }
 
         /*************************************
                 ROOMS
@@ -327,7 +374,10 @@ return true;
         public boolean deleteRooms(int id, String location)
                         throws RemoteException
                         {
-                return (rmRooms.deleteRooms(id, location));
+				if (tM.deleteRooms(id,location))
+                			return (rmRooms.deleteRooms(id, location));
+				else
+					return false;
 
                         }
 
@@ -335,7 +385,10 @@ return true;
         public int queryRooms(int id, String location)
                         throws RemoteException
                         {
-                return (rmRooms.queryRooms(id,location));
+				if (tM.queryRooms(id,location))
+                			return (rmRooms.queryRooms(id,location));
+				else
+					return -1;
                         }
 
 
@@ -345,23 +398,31 @@ return true;
         public int queryRoomsPrice(int id, String location)
                         throws RemoteException
                         {
-                return (rmRooms.queryRoomsPrice(id,location));
+				if (tM.queryRoomsPrice(id,location))
+                			return (rmRooms.queryRoomsPrice(id,location));
+				else
+					return -1;
                         }
 
 
         // Adds room reservation to this customer.
         public boolean reserveRoom(int id, int customerID, String location)
                         throws RemoteException
-                        {
-                boolean result = rmRooms.reserveRoom(id,customerID,location);
-                if (result)
-                {
-                        reserveItem(id, customerID, Hotel.getKey(location), location,queryRoomsPrice(id,location));
-                        return result;
-                }
-                else
-                { return result; }
-                        }
+        {
+		if (tM.reserveRoom(id,customerID,location))
+		{
+                	boolean result = rmRooms.reserveRoom(id,customerID,location);
+                	if (result)
+                	{
+                        	reserveItem(id, customerID, Hotel.getKey(location), location,queryRoomsPrice(id,location));
+                        	return result;
+                	}
+                	else
+                	{ return result; }
+		}
+		else
+			return false;
+        }
 
 
 
@@ -432,27 +493,33 @@ return true;
         // Deletes customer from the database.
         public boolean deleteCustomer(int id, int customerID)
                         throws RemoteException
-                        {
+        {
                 Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") called" );
-                Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
-                if ( cust == null ) {
-                        Trace.warn("RM::deleteCustomer(" + id + ", " + customerID + ") failed--customer doesn't exist" );
-                        return false;
-                } else {
+		if(tM.deleteCustomer(id,customerID))
+		{
+                	Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
+                	if ( cust == null ) {
+                        	Trace.warn("RM::deleteCustomer(" + id + ", " + customerID + ") failed--customer doesn't exist" );
+                        	return false;
+                	} else {
 
-                        /***************************************/
-                        rmCars.deleteCustomer(id,customerID);
-                        rmRooms.deleteCustomer(id,customerID);
-                        rmFlights.deleteCustomer(id,customerID);
-                        /*************************************/
+                        	/***************************************/
+                        	rmCars.deleteCustomer(id,customerID);
+                        	rmRooms.deleteCustomer(id,customerID);
+                        	rmFlights.deleteCustomer(id,customerID);
+                        	/*************************************/
 
-                        // remove the customer from the storage
-                        removeData(id, cust.getKey());
+                        	// remove the customer from the storage
+                        	removeData(id, cust.getKey());
 
-                        Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") succeeded" );
-                        return true;
-                } // if
-                        }
+                        	Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") succeeded" );
+                        	return true;
+                	} // if
+		}
+
+		else
+			return false;
+         }
 
 
 
@@ -482,19 +549,24 @@ return true;
         // return a bill
         public String queryCustomerInfo(int id, int customerID)
                         throws RemoteException
-                        {
+        {
                 Trace.info("RM::queryCustomerInfo(" + id + ", " + customerID + ") called" );
-                Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
-                if ( cust == null ) {
-                        Trace.warn("RM::queryCustomerInfo(" + id + ", " + customerID + ") failed--customer doesn't exist" );
-                        return ""; // NOTE: don't change this--WC counts on this value indicating a customer does not exist...
-                } else {
-                        String s = cust.printBill();
-                        Trace.info("RM::queryCustomerInfo(" + id + ", " + customerID + "), bill follows..." );
-                        System.out.println( s );
-                        return s;
-                } // if
-                        }
+		if(tM.queryCustomerInfo(id,customerID))
+		{
+                	Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
+                	if ( cust == null ) {
+                        	Trace.warn("RM::queryCustomerInfo(" + id + ", " + customerID + ") failed--customer doesn't exist" );
+                        	return ""; // NOTE: don't change this--WC counts on this value indicating a customer does not exist...
+                	} else {
+                        	String s = cust.printBill();
+                        	Trace.info("RM::queryCustomerInfo(" + id + ", " + customerID + "), bill follows..." );
+                        	System.out.println( s );
+                        	return s;
+                	} // if
+		}
+		else
+			return "";
+        }
 
 
         /***************************************
@@ -502,28 +574,66 @@ return true;
         (same as in ResourceManager)
          ***************************************/
 
+	private void writeData(int id, String key, RMItem value)
+    	{
+        	synchronized(openTransactions) {
+	// m_itemHT.put(key, value);
+                Object[] values = {key, value};
+                if (openTransactions.containsKey(id)) {
+                        //If the transaction is already opened, enqueue this update
+                        openTransactions.get(id).add(values);
+                }
+                else { //Otherwise, create a queue for the transaction, enqueue the update, and put the transaction in the openTransactions tree.
+                        Queue<Object[]> temp = new LinkedBlockingQueue<Object[]>();
+                        temp.add(values);
+                openTransactions.put(id, temp);
+                }
+        	}
+    	}
+
+	protected RMItem removeData(int id, String key) {
+        	synchronized(m_itemHT) {
+            		synchronized(openTransactions) {
+              		Queue<Object[]> temp = new LinkedBlockingQueue<Object[]>();
+              		//A null value means we want to remove this object (by convention)
+              		Object[] values = {key, null};
+              		temp.add(values);
+              		openTransactions.put(id, temp);
+            		}
+        	}
+        	return (RMItem)m_itemHT.get(key);
+    	}
+
         // Reads a data item
-        private RMItem readData( int id, String key )
-        {
-                synchronized(m_itemHT){
-                        return (RMItem) m_itemHT.get(key);
-                }
-        }
+        // Reads a data item
+    private RMItem readData( int id, String key )
+    {
+	// If the transaction has never had a WRITE on KEY, just read whatever is in the hastable
+	if (!openTransactions.containsKey(key))
+	{
+        	synchronized(m_itemHT) {
+            		return (RMItem) m_itemHT.get(key);
+        	}
+	}
 
-        // Writes a data item
-        private void writeData( int id, String key, RMItem value )
-        {
-                synchronized(m_itemHT){
-                        m_itemHT.put(key, value);
-                }
-        }
+	// If the transactions has had a WRITE, go through openTransactions and retrieve the NEWEST WRITE
+	// The READ will return that value
+	else
+	{
+		Queue<Object[]> queries = openTransactions.get(key);
+		// Iterate through the queue of queries
+		Iterator<Object[]> itr = queries.iterator();
+		Object[] lastWrite = null;
+		while(itr.hasNext())
+		{
+			lastWrite = itr.next();
+		}
 
-        // Remove the item out of storage
-        protected RMItem removeData(int id, String key){
-                synchronized(m_itemHT){
-                        return (RMItem)m_itemHT.remove(key);
-                }
-        }
+		return (RMItem) lastWrite[1];
+	}
+    }
+
+      
 
 
         // deletes the entire item

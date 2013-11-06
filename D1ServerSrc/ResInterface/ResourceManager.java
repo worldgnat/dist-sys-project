@@ -25,12 +25,12 @@ public interface ResourceManager extends Remote
         /*
          * Commits the given transaction on this RM.
          */
-        public void commit(int tid);
-        
+        public void commit(int tid) throws RemoteException;
+        public void start(int id) throws RemoteException;
         /*
          * Aborts the given transaction on this RM.
          */
-        public void abort(int tid);
+        public void abort(int tid) throws RemoteException;
         
     /* Add seats to a flight. In general this will be used to create a new
 * flight, but it should be possible to add seats to an existing flight.
