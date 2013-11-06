@@ -1,0 +1,48 @@
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.util.ArrayList;
+import java.util.concurrent.LinkedBlockingQueue;
+
+
+public class ClientRunner {
+	public void main(String[] args) {
+		LinkedBlockingQueue<Long> responseTimes = new LinkedBlockingQueue<Long>();
+		ArrayList<client> clients = new ArrayList<client>();
+		ArrayList<String> commands;
+		try {
+			for (String file : args) {
+				commands = new ArrayList<String>();
+				BufferedReader in = new BufferedReader(new FileReader(file));
+				String line;
+				while ((line = in.readLine()) != null) {
+					commands.add(line);
+				}
+				//Create a new auto-client
+				client temp = new client(responseTimes, commands);
+				//Add it to the list of running clients
+				clients.add(temp);
+				//Spawn the thread that will run this client.
+				new Thread(temp).start();
+				in.close();
+			}
+			//Add a shutdown hook to make sure we killall the clients on ctrl+c
+			Runtime.getRuntime().addShutdownHook(new Thread(new ClientKiller(clients)));
+		}
+		catch (Exception er) {
+			er.printStackTrace();
+		}
+	}
+}
+
+class ClientKiller implements Runnable {
+	ArrayList<client> clients;
+	public ClientKiller(ArrayList<client> clients) {
+		this.clients = clients;
+	}
+	
+	public void run() {
+		for (client client : clients) {
+			client.stop();
+		}
+	}
+}
