@@ -11,6 +11,14 @@ public class ClientRunner {
 		ArrayList<client> clients = new ArrayList<client>();
 		ArrayList<String> commands;
 		
+		if (args.length < 2) {
+			System.err.println("Please specify the server and port, at least.");
+			System.exit(1);
+		}
+		
+		String server = args[0];
+		int port = Integer.parseInt(args[1]);
+		
 		try {
 			for (String file : args) {
 				commands = new ArrayList<String>();
@@ -20,7 +28,7 @@ public class ClientRunner {
 					commands.add(line);
 				}
 				//Create a new auto-client
-				client temp = new client(responseTimes, commands);
+				client temp = new client(responseTimes, commands, server, port);
 				//Add it to the list of running clients
 				clients.add(temp);
 				//Spawn the thread that will run this client.
