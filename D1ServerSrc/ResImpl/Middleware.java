@@ -28,11 +28,7 @@ public class Middleware implements MiddlewareInt{
                 int port = 1099;
 
                 // The server names and ports for each RM
-<<<<<<< HEAD
                 String serverCars="open-13.cs.mcgill.ca";
-=======
-                String serverCars="open-11.cs.mcgill.ca";
->>>>>>> branch 'master' of https://github.com/worldgnat/dist-sys-project.git
                 String serverRooms="open-10.cs.mcgill.ca";
                 String serverFlights="open-14.cs.mcgill.ca";
                 int portCars = 4030;
@@ -145,10 +141,7 @@ public class Middleware implements MiddlewareInt{
 			if (openTransactions.containsKey(tid))
 			openTransactions.remove(tid);
 		}
-<<<<<<< HEAD
 		System.out.println("Aborted transaction " + tid);
-=======
->>>>>>> branch 'master' of https://github.com/worldgnat/dist-sys-project.git
         }
 
 
@@ -161,11 +154,7 @@ public class Middleware implements MiddlewareInt{
                         {
                 try
                 {
-<<<<<<< HEAD
                         if(rmFlights!=null && tM.addFlight(id,flightNum,flightSeats,flightPrice) == true)
-=======
-                        if(rmFlights!=null)
->>>>>>> branch 'master' of https://github.com/worldgnat/dist-sys-project.git
                         {
                                 rmFlights.addFlight(id,flightNum,flightSeats,flightPrice);
                                 return true;
@@ -280,7 +269,6 @@ return true;
                         {
                 try
                 {
-<<<<<<< HEAD
                         if(rmCars!=null && tM.addCars(id,location,count,price) == true)
                         {
                                 rmCars.addCars(id,location,count,price);
@@ -472,196 +460,6 @@ return true;
                 rmFlights.newCustomer(id,cid);
                 /*********************************/
 		}
-=======
-                        if(rmCars!=null)
-                        {
-                                rmCars.addCars(id,location,count,price);
-                                return true;
-                        }
-                        else
-                        {
-                                return false;
-                        }
-                        // make call on remote method
-                }
-
-                catch (Exception e)
-                {        
-                        System.err.println("Middleware exception: " + e.toString());
-                        e.printStackTrace();
-                        return false;
-                }
-                        }
-
-
-        // Delete cars from a location
-        public boolean deleteCars(int id, String location)
-                        throws RemoteException
-                        {
-				if (tM.deleteCars(id,location))
-               				 return (rmCars.deleteCars(id,location));
-				else
-					return false;
-                        }
-
-        // Returns the number of cars available at a location
-        public int queryCars(int id, String location)
-                        throws RemoteException
-                        {
-				if (tM.queryCars(id,location))
-                			{return (rmCars.queryCars(id,location));}
-				else
-					return -1;
-                        }
-
-
-        // Returns price of cars at this location
-        public int queryCarsPrice(int id, String location)
-                        throws RemoteException
-                        {
-				if (tM.queryCarsPrice(id,location))
-                			{return (rmCars.queryCarsPrice(id,location));}
-				else
-					return -1;
-                        }
-
-
-        public boolean reserveCar(int id, int customerID, String location)
-                        throws RemoteException
-        {
-			if (tM.reserveCar(id,customerID,location))
-			{
-                		boolean result = rmCars.reserveCar(id,customerID,location);
-               			 if (result)
-                		 {
-                        		reserveItem(id, customerID, Car.getKey(location), location,queryCarsPrice(id,location));
-                        		return result;
-                		 }
-                		 else { return result; }
-			}
-			else
-				{return false;}
-        }
-
-        /*************************************
-                ROOMS
-         *************************************/
-
-        // Just connect to the Rooms RM, tell it to add the room, and catch the exception
-        public boolean addRooms(int id, String location, int count, int price)
-                        throws RemoteException
-                        {
-                try
-                {
-                        if(rmRooms!=null)
-                        {
-                                rmRooms.addRooms(id,location,count,price);
-                                return true;
-                        }
-                        else
-                        {
-                                return false;
-                        }
-                        // make call on remote method
-                }
-
-                catch (Exception e)
-                {        
-                        System.err.println("Middleware exception: " + e.toString());
-                        e.printStackTrace();
-                        return false;
-                }
-
-                        }
-
-
-        // Delete rooms from a location
-        public boolean deleteRooms(int id, String location)
-                        throws RemoteException
-                        {
-				if (tM.deleteRooms(id,location))
-                			return (rmRooms.deleteRooms(id, location));
-				else
-					return false;
-
-                        }
-
-        // Returns the number of rooms available at a location
-        public int queryRooms(int id, String location)
-                        throws RemoteException
-                        {
-				if (tM.queryRooms(id,location))
-                			return (rmRooms.queryRooms(id,location));
-				else
-					return -1;
-                        }
-
-
-
-
-        // Returns room price at this location
-        public int queryRoomsPrice(int id, String location)
-                        throws RemoteException
-                        {
-				if (tM.queryRoomsPrice(id,location))
-                			return (rmRooms.queryRoomsPrice(id,location));
-				else
-					return -1;
-                        }
-
-
-        // Adds room reservation to this customer.
-        public boolean reserveRoom(int id, int customerID, String location)
-                        throws RemoteException
-        {
-		if (tM.reserveRoom(id,customerID,location))
-		{
-                	boolean result = rmRooms.reserveRoom(id,customerID,location);
-                	if (result)
-                	{
-                        	reserveItem(id, customerID, Hotel.getKey(location), location,queryRoomsPrice(id,location));
-                        	return result;
-                	}
-                	else
-                	{ return result; }
-		}
-		else
-			return false;
-        }
-
-
-
-
-
-
-
-
-        /***************************************
-                CUSTOMERS
-        (same code as in ResourceManager)
-         ***************************************/
-
-
-
-        public int newCustomer(int id)
-                        throws RemoteException
-                        {
-                Trace.info("INFO: RM::newCustomer(" + id + ") called" );
-                // Generate a globally unique ID for the new customer
-                int cid = Integer.parseInt( String.valueOf(id) +
-                                String.valueOf(Calendar.getInstance().get(Calendar.MILLISECOND)) +
-                                String.valueOf( Math.round( Math.random() * 100 + 1 )));
-                Customer cust = new Customer( cid );
-                writeData( id, cust.getKey(), cust );
-                Trace.info("RM::newCustomer(" + cid + ") returns ID=" + cid );
-
-                /***************************************/
-                // Make the other RMs add a new customer
-                rmCars.newCustomer(id,cid);
-                rmRooms.newCustomer(id,cid);
-                rmFlights.newCustomer(id,cid);
-                /*********************************/
->>>>>>> branch 'master' of https://github.com/worldgnat/dist-sys-project.git
 
                 return cid;
                         }
@@ -815,7 +613,6 @@ return true;
     private RMItem readData( int id, String key )
     {
 	// If the transaction has never had a WRITE on KEY, just read whatever is in the hastable
-<<<<<<< HEAD
 	//if (!openTransactions.containsKey(id))
 	//{
         	synchronized(m_itemHT) {
@@ -841,33 +638,6 @@ return true;
 
 		return (RMItem) correctItem;
 	}*/
-=======
-	if (!openTransactions.containsKey(id))
-	{
-        	synchronized(m_itemHT) {
-            		return (RMItem) m_itemHT.get(key);
-        	}
-	}
-
-	// If the transactions has had a WRITE, go through openTransactions and retrieve the NEWEST WRITE
-	// The READ will return that value
-	else
-	{
-		Queue<Object[]> queries = openTransactions.get(id);
-		// Iterate through the queue of queries
-		RMItem correctItem = null;
-		Iterator<Object[]> itr = queries.iterator();
-		Object[] dummy = null;
-		while(itr.hasNext())
-		{
-			dummy = itr.next();
-			if (dummy[0] == key)
-			{ correctItem = (RMItem) dummy[1]; }
-		}
-
-		return (RMItem) correctItem;
-	}
->>>>>>> branch 'master' of https://github.com/worldgnat/dist-sys-project.git
     }
 
       

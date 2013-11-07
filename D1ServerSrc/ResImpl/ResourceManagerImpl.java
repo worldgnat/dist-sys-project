@@ -24,7 +24,7 @@ public class ResourceManagerImpl implements ResourceManager
     public static void main(String args[]) {
         // Figure out where server is running
         String server = "localhost";
-        int port = 1030;
+        int port = 2030;
 
         if (args.length == 1) {
             server = server + ":" + args[0];
@@ -43,7 +43,7 @@ public class ResourceManagerImpl implements ResourceManager
 
             // Bind the remote object's stub in the registry
             Registry registry = LocateRegistry.getRegistry(port);
-            registry.rebind("rooms29", rm);
+            registry.rebind("flights29", rm);
 
             System.err.println("Server ready");
         } catch (Exception e) {
@@ -65,7 +65,6 @@ public class ResourceManagerImpl implements ResourceManager
     private RMItem readData( int id, String key )
     {
 	// If the transaction has never had a WRITE on KEY, just read whatever is in the hastable
-<<<<<<< HEAD
 	//if (!openTransactions.containsKey(id))
 	//{
         	synchronized(m_itemHT) {
@@ -91,33 +90,6 @@ public class ResourceManagerImpl implements ResourceManager
 
 		return (RMItem) correctItem;
 	}*/
-=======
-	if (!openTransactions.containsKey(id))
-	{
-        	synchronized(m_itemHT) {
-            		return (RMItem) m_itemHT.get(key);
-        	}
-	}
-
-	// If the transactions has had a WRITE, go through openTransactions and retrieve the NEWEST WRITE
-	// The READ will return that value
-	else
-	{
-		Queue<Object[]> queries = openTransactions.get(id);
-		// Iterate through the queue of queries
-		RMItem correctItem = null;
-		Iterator<Object[]> itr = queries.iterator();
-		Object[] dummy = null;
-		while(itr.hasNext())
-		{
-			dummy = itr.next();
-			if (dummy[0] == key)
-			{ correctItem = (RMItem) dummy[1]; }
-		}
-
-		return (RMItem) correctItem;
-	}
->>>>>>> branch 'master' of https://github.com/worldgnat/dist-sys-project.git
     }
 
     // Writes a data item
