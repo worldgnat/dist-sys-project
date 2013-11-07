@@ -25,13 +25,15 @@ public class ResourceManagerImpl implements ResourceManager
         // Figure out where server is running
         String server = "localhost";
         int port = 2030;
+        String binding = "flights29";
 
-        if (args.length == 1) {
+        if (args.length == 2) {
             server = server + ":" + args[0];
             port = Integer.parseInt(args[0]);
-        } else if (args.length != 0 && args.length != 1) {
+            binding = args[1];
+        } else if (args.length != 0) {
             System.err.println ("Wrong usage");
-            System.out.println("Usage: java ResImpl.ResourceManagerImpl [port]");
+            System.out.println("Usage: java ResImpl.ResourceManagerImpl port registry_binding");
             System.exit(1);
         }
 
@@ -43,7 +45,7 @@ public class ResourceManagerImpl implements ResourceManager
 
             // Bind the remote object's stub in the registry
             Registry registry = LocateRegistry.getRegistry(port);
-            registry.rebind("flights29", rm);
+            registry.rebind(binding, rm);
 
             System.err.println("Server ready");
         } catch (Exception e) {
