@@ -26,7 +26,7 @@ public interface ResourceManager extends Remote
          * Commits the given transaction on this RM.
          */
         public void commit(int tid) throws RemoteException;
-        public void start(int id) throws RemoteException;
+        
         /*
          * Aborts the given transaction on this RM.
          */

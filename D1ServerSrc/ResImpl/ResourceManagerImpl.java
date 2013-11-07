@@ -65,28 +65,31 @@ public class ResourceManagerImpl implements ResourceManager
     private RMItem readData( int id, String key )
     {
 	// If the transaction has never had a WRITE on KEY, just read whatever is in the hastable
-	if (!openTransactions.containsKey(key))
-	{
+	//if (!openTransactions.containsKey(id))
+	//{
         	synchronized(m_itemHT) {
             		return (RMItem) m_itemHT.get(key);
         	}
-	}
+	//}
 
 	// If the transactions has had a WRITE, go through openTransactions and retrieve the NEWEST WRITE
 	// The READ will return that value
-	else
+	/*else
 	{
-		Queue<Object[]> queries = openTransactions.get(key);
+		Queue<Object[]> queries = openTransactions.get(id);
 		// Iterate through the queue of queries
+		RMItem correctItem = null;
 		Iterator<Object[]> itr = queries.iterator();
-		Object[] lastWrite = null;
+		Object[] dummy = null;
 		while(itr.hasNext())
 		{
-			lastWrite = itr.next();
+			dummy = itr.next();
+			if (dummy[0] == key)
+			{ correctItem = (RMItem) dummy[1]; }
 		}
 
-		return (RMItem) lastWrite[1];
-	}
+		return (RMItem) correctItem;
+	}*/
     }
 
     // Writes a data item

@@ -11,8 +11,9 @@ public interface MiddlewareInt extends Remote
         /*
          * Commits the given transaction on this RM.
          */
+	public void start(int id) throws RemoteException;
         public void commit(int tid) throws RemoteException;
-        public void start(int tid) throws RemoteException;
+        
         /*
          * Aborts the given transaction on this RM.
          */

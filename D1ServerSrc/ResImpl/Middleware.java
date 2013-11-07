@@ -141,6 +141,7 @@ public class Middleware implements MiddlewareInt{
 			if (openTransactions.containsKey(tid))
 			openTransactions.remove(tid);
 		}
+		System.out.println("Aborted transaction " + tid);
         }
 
 
@@ -153,7 +154,7 @@ public class Middleware implements MiddlewareInt{
                         {
                 try
                 {
-                        if(rmFlights!=null)
+                        if(rmFlights!=null && tM.addFlight(id,flightNum,flightSeats,flightPrice) == true)
                         {
                                 rmFlights.addFlight(id,flightNum,flightSeats,flightPrice);
                                 return true;
@@ -268,7 +269,7 @@ return true;
                         {
                 try
                 {
-                        if(rmCars!=null)
+                        if(rmCars!=null && tM.addCars(id,location,count,price) == true)
                         {
                                 rmCars.addCars(id,location,count,price);
                                 return true;
@@ -348,7 +349,7 @@ return true;
                         {
                 try
                 {
-                        if(rmRooms!=null)
+                        if(rmRooms!=null && tM.addRooms(id,location,count,price) == true)
                         {
                                 rmRooms.addRooms(id,location,count,price);
                                 return true;
@@ -446,6 +447,8 @@ return true;
                 int cid = Integer.parseInt( String.valueOf(id) +
                                 String.valueOf(Calendar.getInstance().get(Calendar.MILLISECOND)) +
                                 String.valueOf( Math.round( Math.random() * 100 + 1 )));
+		if (tM.newCustomer(id,cid))
+		{
                 Customer cust = new Customer( cid );
                 writeData( id, cust.getKey(), cust );
                 Trace.info("RM::newCustomer(" + cid + ") returns ID=" + cid );
@@ -456,6 +459,7 @@ return true;
                 rmRooms.newCustomer(id,cid);
                 rmFlights.newCustomer(id,cid);
                 /*********************************/
+		}
 
                 return cid;
                         }
@@ -609,28 +613,31 @@ return true;
     private RMItem readData( int id, String key )
     {
 	// If the transaction has never had a WRITE on KEY, just read whatever is in the hastable
-	if (!openTransactions.containsKey(key))
-	{
+	//if (!openTransactions.containsKey(id))
+	//{
         	synchronized(m_itemHT) {
             		return (RMItem) m_itemHT.get(key);
         	}
-	}
+	//}
 
 	// If the transactions has had a WRITE, go through openTransactions and retrieve the NEWEST WRITE
 	// The READ will return that value
-	else
+	/*else
 	{
-		Queue<Object[]> queries = openTransactions.get(key);
+		Queue<Object[]> queries = openTransactions.get(id);
 		// Iterate through the queue of queries
+		RMItem correctItem = null;
 		Iterator<Object[]> itr = queries.iterator();
-		Object[] lastWrite = null;
+		Object[] dummy = null;
 		while(itr.hasNext())
 		{
-			lastWrite = itr.next();
+			dummy = itr.next();
+			if (dummy[0] == key)
+			{ correctItem = (RMItem) dummy[1]; }
 		}
 
-		return (RMItem) lastWrite[1];
-	}
+		return (RMItem) correctItem;
+	}*/
     }
 
       

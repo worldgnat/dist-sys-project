@@ -19,11 +19,12 @@ public class TransactionManager {
         LockManager lm;
         Middleware mid = null;
         TreeMap<Integer, Long> tList = null; // List that keeps track of all transactions
-        
+        TransactionKicker kicker = null;
         public TransactionManager(Middleware creator){
                 lm = new LockManager();
                 tList = new TreeMap<Integer,Long>();
                 mid = creator;
+		kicker = new TransactionKicker(this);
         }
         
         
@@ -54,6 +55,7 @@ public class TransactionManager {
                         }
                         else {
                                 tList.remove(tid);
+				lm.UnlockAll(tid);
                         }
                 }
         }
@@ -64,12 +66,40 @@ public class TransactionManager {
                 synchronized(tList) {
                         lm.UnlockAll(tid);
                         tList.remove(tid);
+			// This is a bit redundant, but the kicker will call this and the middleware must be made aware
+			try
+			{ mid.abort(tid); }
+			catch (RemoteException e)
+			{ System.out.println(e); }
                 }
         }
         
         /*********************************
         ***** FLIGHTS ****
         *********************************/
+	public boolean addFlight(int id, int flightNum, int flightSeats, int flightPrice){
+		try{
+			synchronized (tList) {
+				if (tList.containsKey(id)){
+					if (lm.Lock(id,Flight.getKey(flightNum),LockManager.WRITE))
+					{ return true; }
+					else
+					{ return false; }
+				}
+			}
+		}
+
+
+		catch (DeadlockException e)
+		{ 
+			System.out.println("Deadlock with transaction " + id + "when adding flight" + flightNum);
+			abort(id);
+			return false;
+		}
+
+		return false;
+			
+	}
         public boolean reserveFlight(int id, int customerID, int flightNum)
         throws RemoteException
         {
@@ -93,7 +123,9 @@ public class TransactionManager {
                         }
                 }
                 catch (DeadlockException e) {
-                        //System.out.println ("Deadlock.... ");
+                        System.out.println ("Deadlock at transation " + id + "when reserving flight" + flightNum);
+			abort(id);
+			return false;
                 }
                 return false;
         }
@@ -114,7 +146,8 @@ public class TransactionManager {
                         }
                 }
          catch (DeadlockException e) {
-         //System.out.println ("Deadlock.... ");
+         System.out.println ("Deadlock at transation " + id + "when reserving flight " + flightNum);
+		abort(id);
          return false;
          }
                 return false;
@@ -135,7 +168,8 @@ public class TransactionManager {
                         }
                 }
          catch (DeadlockException e) {
-         //System.out.println ("Deadlock.... ");
+         System.out.println ("Deadlock at transation " + id + "when fetching flight " + flightNum);
+	 abort(id);
          return false;
          }
                 return false;
@@ -157,7 +191,8 @@ public class TransactionManager {
                         }
          }
          catch (DeadlockException e) {
-         //System.out.println ("Deadlock.... ");
+         System.out.println ("Deadlock at transaction " + id + "when fetching flight price " + flightNum);
+	 abort(id);
          return false;
          }
                 return false;
@@ -166,6 +201,30 @@ public class TransactionManager {
         /*********************************
         ***** CARS ****
         *********************************/
+
+	public boolean addCars(int id, String location, int count, int price){
+		try {
+			synchronized(tList){
+				if (tList.containsKey(id)){
+					if (lm.Lock(id,Car.getKey(location),LockManager.WRITE))
+					{ return true; }
+					else
+					{ return false; }
+				}
+			}
+		}
+
+
+		catch(DeadlockException e) {
+			System.out.println("Deadlock at transaction " + id + "when adding car " + location);
+			abort(id); 
+			return false; 
+		}
+	
+		return false;
+		
+
+	}
         
         public boolean reserveCar(int id, int customerID, String location)
         {
@@ -186,7 +245,8 @@ public class TransactionManager {
                         }
          }
          catch (DeadlockException e) {
-         //System.out.println ("Deadlock.... ");
+         System.out.println ("Deadlock at transaction " + id + "when reserving car " + location);
+	 abort(id);
          return false;
          }
                 return false;
@@ -210,7 +270,8 @@ public class TransactionManager {
                         }
          }
          catch (DeadlockException e) {
-         //System.out.println ("Deadlock.... ");
+         System.out.println ("Deadlock at transction "+id+" when deleting car "+location);
+	 abort(id);
          return false;
          }
                 return false;
@@ -232,7 +293,8 @@ public class TransactionManager {
                         }
          }
          catch (DeadlockException e) {
-         //System.out.println ("Deadlock.... ");
+         System.out.println ("Deadlock at transaction " + id + " when detching car " + location);
+	 abort(id);
          return false;
          }
                 return false;
@@ -254,7 +316,8 @@ public class TransactionManager {
                         }
          }
          catch (DeadlockException e) {
-         //System.out.println ("Deadlock.... ");
+         System.out.println ("Deadlock at transaction " + id + " when fetching car price " + location);
+	 abort(id);
          return false;
          }
                 return false;
@@ -265,7 +328,31 @@ public class TransactionManager {
         ***** ROOMS ****
         *********************************/
         
-        
+        public boolean addRooms(int id, String location, int count, int price){
+		try{
+			synchronized (tList){
+				if (tList.containsKey(id)){
+					if (lm.Lock(id,Hotel.getKey(location), LockManager.WRITE))
+					{ return true; }
+					else
+					{ return false; }
+				}
+			}
+
+		}
+
+
+		catch (DeadlockException e) {
+			System.out.println("Deadlock at transction " + id + " when adding rooms " + location); 
+			abort(id);
+			return false; 
+		}
+		
+		return false;
+
+	}
+
+
         public boolean reserveRoom(int id, int customerID, String location)
         {
                 try {
@@ -284,8 +371,9 @@ public class TransactionManager {
                         }
          }
          catch (DeadlockException e) {
-         //System.out.println ("Deadlock.... ");
-         return false;
+         System.out.println ("Deadlock at transaction " + id + " when reserving room " + location);
+        abort(id); 
+	return false;
          }
                 return false;
         }
@@ -305,8 +393,9 @@ public class TransactionManager {
                         }
          }
          catch (DeadlockException e) {
-         //System.out.println ("Deadlock.... ");
-         return false;
+         System.out.println ("Deadlock at transaction " + id + " when deleting rooms " + location);
+        abort(id); 
+	return false;
          }
                 return false;
         }
@@ -327,8 +416,9 @@ public class TransactionManager {
                         }
          }
          catch (DeadlockException e) {
-         //System.out.println ("Deadlock.... ");
-         return false;
+         System.out.println ("Deadlock at transaction " + id + " when fetching rooms " + location);
+        abort(id); 
+	return false;
          }
                 return false;
         }
@@ -349,8 +439,9 @@ public class TransactionManager {
                         }
          }
          catch (DeadlockException e) {
-         //System.out.println ("Deadlock.... ");
-         return false;
+         System.out.println ("Deadlock at transaction " + id + "when fetching rooms price " + location);
+         abort(id);
+	 return false;
          }
                 return false;
         }
@@ -360,6 +451,23 @@ public class TransactionManager {
          * CUSTOMERS
          * @throws RemoteException
          **************************************/
+	public boolean newCustomer(int id, int cid){
+		try {
+			synchronized (tList) {
+				if (tList.containsKey(id)){
+					if (lm.Lock(id,Customer.getKey(cid),LockManager.WRITE))
+					{ return true; }
+					else
+					{ return false; }
+				}
+			}
+		}
+
+
+		catch (DeadlockException e)
+		{ System.out.println("Deadlock at transaction " + id + "when adding customer " + cid); abort(id); return false; }
+		return false;
+	}
         public boolean deleteCustomer(int id, int customerID) throws RemoteException
         {
                 try{
@@ -393,7 +501,8 @@ public class TransactionManager {
                         }
                 }
                 catch (DeadlockException e) {
-         //System.out.println ("Deadlock.... ");
+         System.out.println ("Deadlock at transaction " + id + "when deleting customer " + customerID);
+	 abort(id);
          return false;
          }
                 return false;
@@ -413,8 +522,9 @@ public class TransactionManager {
                         }
                 }
                 catch (DeadlockException e) {
-         //System.out.println ("Deadlock.... ");
-         return false;
+         System.out.println ("Deadlock at transaction " + id + "when querying customer " + customerID);
+        abort(id); 
+	return false;
          }
                 return false;
         }
@@ -448,8 +558,9 @@ public class TransactionManager {
                         }
                 }
                 catch (DeadlockException e) {
-         //System.out.println ("Deadlock.... ");
-         return false;
+         System.out.println ("Deadlock at transaction " + id + "when making an itinerary");
+         abort(id);
+	 return false;
          }
                 return false;
         }
@@ -461,14 +572,16 @@ public class TransactionManager {
 class TransactionKicker implements Runnable {
         private TreeMap<Integer, Long> transactions;
         private TransactionManager manager;
+	//private Middleware mid;
         
         public TransactionKicker(TransactionManager manager) {
                 this.manager = manager;
                 this.transactions = manager.tList;
+		//this.mid = creator;
         }
         
         boolean running = true;
-        public void run() {
+        public void run(){
                 while (running) {
                         for (int t : transactions.keySet()) {
                                 if (transactions.get(t) - System.currentTimeMillis() > TransactionManager.timeout) {
