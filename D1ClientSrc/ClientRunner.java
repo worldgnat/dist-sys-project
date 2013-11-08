@@ -20,9 +20,9 @@ public class ClientRunner {
 		int port = Integer.parseInt(args[1]);
 		
 		try {
-			for (String file : args) {
+			for (int i = 2; i < args.length; i++) {
 				commands = new ArrayList<String>();
-				BufferedReader in = new BufferedReader(new FileReader(file));
+				BufferedReader in = new BufferedReader(new FileReader(args[i]));
 				String line;
 				while ((line = in.readLine()) != null) {
 					commands.add(line);
@@ -59,12 +59,13 @@ class ClientKiller implements Runnable {
 		}
 		
 		//Calculate the average response time for this run and print it
-		long avgTime = 0;
+		float avgTime = 0;
 		int numSamples = responseTimes.size();
 		for (long time : responseTimes) {
 			avgTime += time;
 		}
-		avgTime = avgTime / numSamples;
+		System.out.println("Recorded " + numSamples + " samples.");
+		if (numSamples > 0) avgTime = avgTime / numSamples;
 		System.out.println("Average Response Time: " + avgTime);
 	}
 }
