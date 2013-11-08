@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.TreeMap;
 import java.util.Vector;
 
+import exceptions.InvalidTransactionException;
 import LockManager.*;
 
 public class TransactionManager {
@@ -48,24 +49,29 @@ public class TransactionManager {
                 }
         }
         
-        public void commit(int tid) {
+        public void commit(int tid) throws InvalidTransactionException {
                 synchronized(tList) {
                         if (!tList.containsKey(tid)) {
-                                System.err.println("No such transaction " + tid);
+                                throw new InvalidTransactionException(tid);
                         }
                         else {
                                 tList.remove(tid);
-				lm.UnlockAll(tid);
+                                lm.UnlockAll(tid);
                         }
                 }
         }
         
         // Release all the locks and remove the transaction from the list
-        public void abort(int tid)
+        public void abort(int tid) throws InvalidTransactionException
         {
                 synchronized(tList) {
+                	if (tList.containsKey(tid)) {
                         lm.UnlockAll(tid);
                         tList.remove(tid);
+                	}
+                	else {
+                		throw new InvalidTransactionException(tid);
+                	}
 			// This is a bit redundant, but the kicker will call this and the middleware must be made aware
 			try
 			{ mid.abort(tid); }
@@ -77,7 +83,7 @@ public class TransactionManager {
         /*********************************
         ***** FLIGHTS ****
         *********************************/
-	public boolean addFlight(int id, int flightNum, int flightSeats, int flightPrice){
+	public boolean addFlight(int id, int flightNum, int flightSeats, int flightPrice) throws InvalidTransactionException {
 		try{
 			synchronized (tList) {
 				if (tList.containsKey(id)){
@@ -101,7 +107,7 @@ public class TransactionManager {
 			
 	}
         public boolean reserveFlight(int id, int customerID, int flightNum)
-        throws RemoteException
+        throws RemoteException, InvalidTransactionException 
         {
                 try {
                         synchronized (tList) {
@@ -130,7 +136,7 @@ public class TransactionManager {
                 return false;
         }
         
-        public boolean deleteFlight(int id, int flightNum)
+        public boolean deleteFlight(int id, int flightNum) throws InvalidTransactionException 
         {
                 try {
                         synchronized (tList) {
@@ -152,7 +158,8 @@ public class TransactionManager {
          }
                 return false;
         }
-        public boolean queryFlight(int id, int flightNum)
+        
+        public boolean queryFlight(int id, int flightNum) throws InvalidTransactionException 
         {
                 try {
                         synchronized (tList) {
@@ -175,7 +182,7 @@ public class TransactionManager {
                 return false;
         }
         
-        public boolean queryFlightPrice(int id, int flightNum)
+        public boolean queryFlightPrice(int id, int flightNum) throws InvalidTransactionException 
         {
                 try {
                         synchronized (tList) {
@@ -202,7 +209,7 @@ public class TransactionManager {
         ***** CARS ****
         *********************************/
 
-	public boolean addCars(int id, String location, int count, int price){
+	public boolean addCars(int id, String location, int count, int price) throws InvalidTransactionException {
 		try {
 			synchronized(tList){
 				if (tList.containsKey(id)){
@@ -226,7 +233,7 @@ public class TransactionManager {
 
 	}
         
-        public boolean reserveCar(int id, int customerID, String location)
+        public boolean reserveCar(int id, int customerID, String location) throws InvalidTransactionException 
         {
                 try {
                         synchronized (tList) {
@@ -252,7 +259,7 @@ public class TransactionManager {
                 return false;
         }
         
-        public boolean deleteCars(int id, String location)
+        public boolean deleteCars(int id, String location) throws InvalidTransactionException 
         {
                 try {
                         synchronized (tList) {
@@ -277,7 +284,7 @@ public class TransactionManager {
                 return false;
         }
         
-        public boolean queryCars(int id, String location)
+        public boolean queryCars(int id, String location) throws InvalidTransactionException 
         {
                 try {
                         synchronized (tList) {
@@ -300,7 +307,7 @@ public class TransactionManager {
                 return false;
         }
         
-        public boolean queryCarsPrice(int id, String location)
+        public boolean queryCarsPrice(int id, String location) throws InvalidTransactionException 
         {
                 try {
                         synchronized (tList) {
@@ -328,7 +335,7 @@ public class TransactionManager {
         ***** ROOMS ****
         *********************************/
         
-        public boolean addRooms(int id, String location, int count, int price){
+        public boolean addRooms(int id, String location, int count, int price) throws InvalidTransactionException {
 		try{
 			synchronized (tList){
 				if (tList.containsKey(id)){
@@ -353,7 +360,7 @@ public class TransactionManager {
 	}
 
 
-        public boolean reserveRoom(int id, int customerID, String location)
+        public boolean reserveRoom(int id, int customerID, String location) throws InvalidTransactionException 
         {
                 try {
                         synchronized (tList) {
@@ -377,7 +384,8 @@ public class TransactionManager {
          }
                 return false;
         }
-        public boolean deleteRooms(int id, String location)
+        
+        public boolean deleteRooms(int id, String location) throws InvalidTransactionException 
         {
                 try {
                         synchronized (tList) {
@@ -400,7 +408,7 @@ public class TransactionManager {
                 return false;
         }
         
-        public boolean queryRooms(int id, String location)
+        public boolean queryRooms(int id, String location) throws InvalidTransactionException 
         {
                 try {
                         synchronized (tList) {
@@ -423,7 +431,7 @@ public class TransactionManager {
                 return false;
         }
         
-        public boolean queryRoomsPrice(int id, String location)
+        public boolean queryRoomsPrice(int id, String location) throws InvalidTransactionException 
         {
                 try {
                         synchronized (tList) {
@@ -451,7 +459,7 @@ public class TransactionManager {
          * CUSTOMERS
          * @throws RemoteException
          **************************************/
-	public boolean newCustomer(int id, int cid){
+	public boolean newCustomer(int id, int cid) throws InvalidTransactionException {
 		try {
 			synchronized (tList) {
 				if (tList.containsKey(id)){
@@ -468,7 +476,7 @@ public class TransactionManager {
 		{ System.out.println("Deadlock at transaction " + id + "when adding customer " + cid); abort(id); return false; }
 		return false;
 	}
-        public boolean deleteCustomer(int id, int customerID) throws RemoteException
+        public boolean deleteCustomer(int id, int customerID) throws RemoteException, InvalidTransactionException 
         {
                 try{
                         synchronized (tList) {
@@ -508,7 +516,7 @@ public class TransactionManager {
                 return false;
         }
         
-        public boolean queryCustomerInfo(int id, int customerID)
+        public boolean queryCustomerInfo(int id, int customerID) throws InvalidTransactionException 
         {
                 try{
                         synchronized (tList) {
@@ -529,7 +537,7 @@ public class TransactionManager {
                 return false;
         }
         
-        public boolean itinerary(int id,int customer,Vector flightNumbers,String location,boolean car,boolean room)
+        public boolean itinerary(int id,int customer,Vector flightNumbers,String location,boolean car,boolean room) throws InvalidTransactionException 
         {
                 try{
                         synchronized (tList) {
@@ -585,8 +593,13 @@ class TransactionKicker implements Runnable {
                 while (running) {
                         for (int t : transactions.keySet()) {
                                 if (transactions.get(t) - System.currentTimeMillis() > TransactionManager.timeout) {
+                                	try {
                                         manager.abort(t);
                                         transactions.remove(t);
+                                	}
+                                	catch (InvalidTransactionException er ) {
+                                		System.err.println("Could not kick transaction " + t +"; it may already have been aborted!");
+                                	}
                                 }
                         }
                 }
