@@ -18,6 +18,7 @@ public class client implements Runnable
 	ArrayList<String> commands;
 	LinkedBlockingQueue<Long> responseTimes;
 	boolean running;
+	int delay = -1;
 	
 	public client() {}
 		
@@ -53,7 +54,11 @@ public class client implements Runnable
 			//System.setSecurityManager(new RMISecurityManager());
 		}
 	}
-
+	
+	public client(LinkedBlockingQueue<Long> responseTimes, ArrayList<String> commands, String server, int port, int delay) {
+		this(responseTimes, commands, server, port);
+		this.delay = delay;
+	}
 	public static void main(String args[])
 	{
 		new client().answerCommands(args);
@@ -64,19 +69,25 @@ public class client implements Runnable
 		running = false;
 	}
 	
-	public void run() {		
+	public void run() {	
+		long lastRun = System.currentTimeMillis();
 		/*
 		 * Continuously execute the same set of commands. 
 		 * 
 		 * Since randomly executed commands will not necessarily create valid 
 		 * sequences of commands, the system will not be properly tested. 
+		 * 
+		 * If delay is less than one, we should send commands as fast as we can.
 		 */
 		while (running) {
-			for (String command : commands) {
-				long start = System.currentTimeMillis();
-				executeCommand(command);
-				//After executing the command, record the amount of time it took to get a response.
-				responseTimes.add(System.currentTimeMillis()-start);
+			if (lastRun-System.currentTimeMillis() >= delay || delay < 0) {
+				lastRun = System.currentTimeMillis();
+				for (String command : commands) {
+					long start = System.currentTimeMillis();
+					executeCommand(command);
+					//After executing the command, record the amount of time it took to get a response.
+					responseTimes.add(System.currentTimeMillis()-start);
+				}
 			}
 		}
 	}

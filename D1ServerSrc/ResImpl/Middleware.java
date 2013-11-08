@@ -66,8 +66,6 @@ public class Middleware implements MiddlewareInt{
                         Middleware obj = new Middleware();
                         MiddlewareInt mid = (MiddlewareInt) UnicastRemoteObject.exportObject(obj, 0);
 
-
-
                         // get a reference to the rmiregistry
                         Registry registry = LocateRegistry.getRegistry(server, port);
                         registry.rebind("middleware29",mid); // put the middleware remote object in the rmi registry for the client to see

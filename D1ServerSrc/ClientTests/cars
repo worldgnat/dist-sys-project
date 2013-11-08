@@ -1,6 +1,6 @@
 newcar,1,"Hawaii",90,1000
-querycar,1,90
-newflight,1,80,90,1000
-queryflight,1,80
-deleteflight,1,80
-deleteflight,1,90
+querycar,1,"Hawaii"
+newcar,1,"Georgia",90,1000
+querycar,1,"Georgia"
+deletecar,1,"Georgia"
+deletecar,1,"Hawaii"
