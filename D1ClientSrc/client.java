@@ -50,7 +50,7 @@ public class client implements Runnable
 		}
 
 		if (System.getSecurityManager() == null) {
-			System.setSecurityManager(new RMISecurityManager());
+			//System.setSecurityManager(new RMISecurityManager());
 		}
 	}
 

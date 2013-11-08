@@ -53,8 +53,11 @@ public class Middleware implements MiddlewareInt{
                 }
                 if (args.length > 2)
                 {
-                        System.out.println ("Usage: java Middleware [rmihost [rmiport]]");
-                        System.exit(1);
+                	serverCars = args [2];
+                	serverRooms = args[3];
+                	serverFlights = args[4];
+//                        System.out.println ("Usage: java Middleware [rmihost [rmiport]]");
+//                        System.exit(1);
                 }
 
 

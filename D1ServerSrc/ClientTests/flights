@@ -1,0 +1,6 @@
+newflight,1,90,90,1000
+queryflight,1,90
+newflight,1,80,90,1000
+queryflight,1,80
+deleteflight,1,80
+deleteflight,1,90
