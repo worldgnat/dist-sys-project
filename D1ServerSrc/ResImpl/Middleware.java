@@ -109,7 +109,7 @@ public class Middleware implements MiddlewareInt{
 		return true;
 	}
         public void start(int tid) throws RemoteException{
-		//synchronized (openTransactions){
+		//synchronized (openTransactions) {
 			//if (openTransactions.containsKey(tid) == false)
 			//{
 				tM.start(tid);
@@ -199,7 +199,7 @@ public class Middleware implements MiddlewareInt{
 
 
         public boolean deleteFlight(int id, int flightNum)
-                        throws RemoteException
+                        throws RemoteException, InvalidTransactionException
                         {
 				if (tM.deleteFlight(id,flightNum))
                 			return (rmFlights.deleteFlight(id, flightNum));
@@ -209,7 +209,7 @@ public class Middleware implements MiddlewareInt{
 
         // Returns the number of empty seats on this flight
         public int queryFlight(int id, int flightNum)
-                        throws RemoteException
+                        throws RemoteException, InvalidTransactionException
                         {
 				if (tM.queryFlight(id,flightNum))
                 			return (rmFlights.queryFlight(id, flightNum));
@@ -221,7 +221,7 @@ public class Middleware implements MiddlewareInt{
 
         // Returns price of this flight
         public int queryFlightPrice(int id, int flightNum )
-                        throws RemoteException
+                        throws RemoteException, InvalidTransactionException
                         {
 				if (tM.queryFlightPrice(id,flightNum))
                				 return (rmFlights.queryFlightPrice(id,flightNum));
@@ -232,7 +232,7 @@ public class Middleware implements MiddlewareInt{
 
         // Adds flight reservation to this customer.
         public boolean reserveFlight(int id, int customerID, int flightNum)
-        throws RemoteException
+        throws RemoteException, InvalidTransactionException
         {
                 if (tM.reserveFlight(id, customerID, flightNum)) {
                         boolean result = rmFlights.reserveFlight(id,customerID,flightNum);
@@ -288,7 +288,7 @@ return true;
 
         // Just connect to the Cars RM, tell it to add the car and catch the exception
         public boolean addCars(int id, String location, int count, int price)
-                        throws RemoteException
+                        throws RemoteException, InvalidTransactionException
                         {
                 try
                 {
@@ -315,7 +315,7 @@ return true;
 
         // Delete cars from a location
         public boolean deleteCars(int id, String location)
-                        throws RemoteException
+                        throws RemoteException, InvalidTransactionException
                         {
 				if (tM.deleteCars(id,location))
                				 return (rmCars.deleteCars(id,location));
@@ -325,7 +325,7 @@ return true;
 
         // Returns the number of cars available at a location
         public int queryCars(int id, String location)
-                        throws RemoteException
+                        throws RemoteException, InvalidTransactionException
                         {
 				if (tM.queryCars(id,location))
                 			{return (rmCars.queryCars(id,location));}
@@ -336,7 +336,7 @@ return true;
 
         // Returns price of cars at this location
         public int queryCarsPrice(int id, String location)
-                        throws RemoteException
+                        throws RemoteException, InvalidTransactionException
                         {
 				if (tM.queryCarsPrice(id,location))
                 			{return (rmCars.queryCarsPrice(id,location));}
@@ -346,7 +346,7 @@ return true;
 
 
         public boolean reserveCar(int id, int customerID, String location)
-                        throws RemoteException
+                        throws RemoteException, InvalidTransactionException
         {
 			if (tM.reserveCar(id,customerID,location))
 			{
@@ -368,7 +368,7 @@ return true;
 
         // Just connect to the Rooms RM, tell it to add the room, and catch the exception
         public boolean addRooms(int id, String location, int count, int price)
-                        throws RemoteException
+                        throws RemoteException, InvalidTransactionException
                         {
                 try
                 {
@@ -396,7 +396,7 @@ return true;
 
         // Delete rooms from a location
         public boolean deleteRooms(int id, String location)
-                        throws RemoteException
+                        throws RemoteException, InvalidTransactionException
                         {
 				if (tM.deleteRooms(id,location))
                 			return (rmRooms.deleteRooms(id, location));
@@ -407,7 +407,7 @@ return true;
 
         // Returns the number of rooms available at a location
         public int queryRooms(int id, String location)
-                        throws RemoteException
+                        throws RemoteException, InvalidTransactionException
                         {
 				if (tM.queryRooms(id,location))
                 			return (rmRooms.queryRooms(id,location));
@@ -420,7 +420,7 @@ return true;
 
         // Returns room price at this location
         public int queryRoomsPrice(int id, String location)
-                        throws RemoteException
+                        throws RemoteException, InvalidTransactionException
                         {
 				if (tM.queryRoomsPrice(id,location))
                 			return (rmRooms.queryRoomsPrice(id,location));
@@ -431,7 +431,7 @@ return true;
 
         // Adds room reservation to this customer.
         public boolean reserveRoom(int id, int customerID, String location)
-                        throws RemoteException
+                        throws RemoteException, InvalidTransactionException
         {
 		if (tM.reserveRoom(id,customerID,location))
 		{
@@ -463,7 +463,7 @@ return true;
 
 
         public int newCustomer(int id)
-                        throws RemoteException
+                        throws RemoteException, InvalidTransactionException
                         {
                 Trace.info("INFO: RM::newCustomer(" + id + ") called" );
                 // Generate a globally unique ID for the new customer
@@ -492,7 +492,7 @@ return true;
 
         // I opted to pass in customerID instead. This makes testing easier
         public boolean newCustomer(int id, int customerID )
-                        throws RemoteException
+                        throws RemoteException, InvalidTransactionException
                         {
                 Trace.info("INFO: RM::newCustomer(" + id + ", " + customerID + ") called" );
                 Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
@@ -519,7 +519,7 @@ return true;
 
         // Deletes customer from the database.
         public boolean deleteCustomer(int id, int customerID)
-                        throws RemoteException
+                        throws RemoteException, InvalidTransactionException
         {
                 Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") called" );
 		if(tM.deleteCustomer(id,customerID))
@@ -575,7 +575,7 @@ return true;
 
         // return a bill
         public String queryCustomerInfo(int id, int customerID)
-                        throws RemoteException
+                        throws RemoteException, InvalidTransactionException
         {
                 Trace.info("RM::queryCustomerInfo(" + id + ", " + customerID + ") called" );
 		if(tM.queryCustomerInfo(id,customerID))
@@ -737,7 +737,7 @@ return true;
 
         // Reserve an itinerary
         public boolean itinerary(int id,int customer,Vector flightNumbers,String location,boolean car,boolean room)
-                        throws RemoteException
+                        throws RemoteException, InvalidTransactionException
                         {
                 boolean carBool = true;
                 boolean roomBool = true;

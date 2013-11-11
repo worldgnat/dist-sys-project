@@ -66,7 +66,7 @@ public class TransactionManager {
         {
                 synchronized(tList) {
                 	if (tList.containsKey(tid)) {
-                        lm.UnlockAll(tid);
+                		lm.UnlockAll(tid);
                         tList.remove(tid);
                 	}
                 	else {
