@@ -34,9 +34,14 @@ public class ResourceManagerImpl implements ResourceManager
             server = server + ":" + args[0];
             port = Integer.parseInt(args[0]);
             binding = args[1].trim();
+        }
+        else if (args.length == 3){
+        	server = args[3].trim();
+            port = Integer.parseInt(args[0]);
+            binding = args[1].trim();
         } else {
             System.err.println ("Wrong usage");
-            System.out.println("Usage: java ResImpl.ResourceManagerImpl [port] binding");
+            System.out.println("Usage: java ResImpl.ResourceManagerImpl [port] binding [server]");
             System.exit(1);
         }
 
@@ -47,7 +52,7 @@ public class ResourceManagerImpl implements ResourceManager
             ResourceManager rm = (ResourceManager) UnicastRemoteObject.exportObject(obj, 0);
 
             // Bind the remote object's stub in the registry
-            Registry registry = LocateRegistry.getRegistry(port);
+            Registry registry = LocateRegistry.getRegistry(server, port);
             registry.rebind(binding, rm);
 
             System.err.println("Server ready");

@@ -27,15 +27,6 @@ public class Middleware implements MiddlewareInt{
                 String server="localhost";
                 int port = 1099;
 
-                // The server names and ports for each RM
-                String serverCars="open-13.cs.mcgill.ca";
-                String serverRooms="open-11.cs.mcgill.ca";
-                String serverFlights="open-14.cs.mcgill.ca";
-                int portCars = 4030;
-                int portRooms = 1030;
-                int portFlights = 2030;
-
-
                 // Get the server and port for the rmi registry
 
                 if (args.length > 0)
@@ -58,21 +49,14 @@ public class Middleware implements MiddlewareInt{
                         Middleware obj = new Middleware();
                         MiddlewareInt mid = (MiddlewareInt) UnicastRemoteObject.exportObject(obj, 0);
 
-
-
                         // get a reference to the rmiregistry
                         Registry registry = LocateRegistry.getRegistry(server, port);
                         registry.rebind("middleware29",mid); // put the middleware remote object in the rmi registry for the client to see
 
-
-                        Registry registryFlights = LocateRegistry.getRegistry(serverFlights,portFlights);
-                        Registry registryCars = LocateRegistry.getRegistry(serverCars,portCars);
-                        Registry registryRooms = LocateRegistry.getRegistry(serverRooms,portRooms);
                         // get the rms for each resource
-                        rmFlights = (ResourceManager) registryFlights.lookup("flights29");
-                        rmCars = (ResourceManager) registryCars.lookup("cars29");
-                        rmRooms = (ResourceManager) registryRooms.lookup("rooms29");
-
+                        rmFlights = (ResourceManager) registry.lookup("flights29");
+                        rmCars = (ResourceManager) registry.lookup("cars29");
+                        rmRooms = (ResourceManager) registry.lookup("rooms29");
 
                         if( rmCars!=null && rmRooms!=null && rmFlights!=null)
                         {
