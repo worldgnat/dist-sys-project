@@ -4,6 +4,7 @@ import java.rmi.Remote;
 import java.rmi.RemoteException;
 
 import java.util.*;
+import exceptions.*;
 /**
 * Simplified version from CSE 593 Univ. of Washington
 *
@@ -22,15 +23,17 @@ import java.util.*;
 
 public interface ResourceManager extends Remote
 {
+	public void start(int tid) throws RemoteException;
+	public boolean shutdown() throws RemoteException;
         /*
          * Commits the given transaction on this RM.
          */
-        public void commit(int tid) throws RemoteException;
+        public void commit(int tid) throws RemoteException, InvalidTransactionException, TransactionAbortedException;
         
         /*
          * Aborts the given transaction on this RM.
          */
-        public void abort(int tid) throws RemoteException;
+        public void abort(int tid) throws RemoteException, InvalidTransactionException;
         
     /* Add seats to a flight. In general this will be used to create a new
 * flight, but it should be possible to add seats to an existing flight.

@@ -1,20 +1,15 @@
 package ResImpl;
 
-import java.rmi.RMISecurityManager;
-import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
-import java.rmi.server.UnicastRemoteObject;
-import java.util.Calendar;
-import java.util.Queue;
-import java.util.TreeMap;
-import java.util.Vector;
+import ResInterface.*;
+
+import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
-
-import ResInterface.MiddlewareInt;
-import ResInterface.ResourceManager;
-import exceptions.InvalidTransactionException;
-
+import java.rmi.registry.Registry;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
+import java.rmi.RMISecurityManager;
+import exceptions.*;
 
 
 public class Middleware implements MiddlewareInt{
@@ -34,7 +29,7 @@ public class Middleware implements MiddlewareInt{
 
                 // The server names and ports for each RM
                 String serverCars="open-13.cs.mcgill.ca";
-                String serverRooms="open-10.cs.mcgill.ca";
+                String serverRooms="open-11.cs.mcgill.ca";
                 String serverFlights="open-14.cs.mcgill.ca";
                 int portCars = 4030;
                 int portRooms = 1030;
@@ -53,11 +48,8 @@ public class Middleware implements MiddlewareInt{
                 }
                 if (args.length > 2)
                 {
-                	serverCars = args [2];
-                	serverRooms = args[3];
-                	serverFlights = args[4];
-//                        System.out.println ("Usage: java Middleware [rmihost [rmiport]]");
-//                        System.exit(1);
+                        System.out.println ("Usage: java Middleware [rmihost [rmiport]]");
+                        System.exit(1);
                 }
 
 
@@ -65,6 +57,8 @@ public class Middleware implements MiddlewareInt{
                 {
                         Middleware obj = new Middleware();
                         MiddlewareInt mid = (MiddlewareInt) UnicastRemoteObject.exportObject(obj, 0);
+
+
 
                         // get a reference to the rmiregistry
                         Registry registry = LocateRegistry.getRegistry(server, port);
@@ -108,11 +102,28 @@ public class Middleware implements MiddlewareInt{
                 tM = new ResImpl.TransactionManager(this);
         }
         
+	public boolean shutdown() throws RemoteException{
+		rmCars.shutdown();
+		rmFlights.shutdown();
+		rmRooms.shutdown();
+		return true;
+	}
         public void start(int tid) throws RemoteException{
-                tM.start(tid);
+		//synchronized (openTransactions){
+			//if (openTransactions.containsKey(tid) == false)
+			//{
+				tM.start(tid);
+				rmFlights.start(tid);
+				rmCars.start(tid);
+				rmRooms.start(tid);
+				Queue<Object[]> queue = new LinkedBlockingQueue<Object[]>();
+				openTransactions.put(tid,queue);
+				System.out.println("Started transaction " + tid);
+			//}
+		//}
         }
 
-        public void commit(int tid) throws RemoteException, InvalidTransactionException {
+        public void commit(int tid) throws RemoteException, InvalidTransactionException, TransactionAbortedException{
                 tM.commit(tid);
                 rmFlights.commit(tid);
                 rmCars.commit(tid);
@@ -134,10 +145,14 @@ public class Middleware implements MiddlewareInt{
 	          	}
 
 			openTransactions.remove(tid);
+			System.out.println("COmmitted transaction " + tid);
 		     }
+
+		     else
+			throw new InvalidTransactionException(tid);
        		 }
 	}
-        public void abort(int tid) throws RemoteException, InvalidTransactionException {
+        public void abort(int tid) throws RemoteException, InvalidTransactionException{
                 rmFlights.abort(tid);
                 rmCars.abort(tid);
                 rmRooms.abort(tid);
@@ -146,6 +161,8 @@ public class Middleware implements MiddlewareInt{
 		synchronized(openTransactions){
 			if (openTransactions.containsKey(tid))
 			openTransactions.remove(tid);
+			else
+			throw new InvalidTransactionException(tid);
 		}
 		System.out.println("Aborted transaction " + tid);
         }
@@ -181,7 +198,8 @@ public class Middleware implements MiddlewareInt{
                         }
 
 
-        public boolean deleteFlight(int id, int flightNum) throws InvalidTransactionException,RemoteException
+        public boolean deleteFlight(int id, int flightNum)
+                        throws RemoteException
                         {
 				if (tM.deleteFlight(id,flightNum))
                 			return (rmFlights.deleteFlight(id, flightNum));
@@ -191,7 +209,7 @@ public class Middleware implements MiddlewareInt{
 
         // Returns the number of empty seats on this flight
         public int queryFlight(int id, int flightNum)
-                        throws RemoteException, InvalidTransactionException
+                        throws RemoteException
                         {
 				if (tM.queryFlight(id,flightNum))
                 			return (rmFlights.queryFlight(id, flightNum));
@@ -203,7 +221,7 @@ public class Middleware implements MiddlewareInt{
 
         // Returns price of this flight
         public int queryFlightPrice(int id, int flightNum )
-                        throws RemoteException, InvalidTransactionException
+                        throws RemoteException
                         {
 				if (tM.queryFlightPrice(id,flightNum))
                				 return (rmFlights.queryFlightPrice(id,flightNum));
@@ -214,7 +232,7 @@ public class Middleware implements MiddlewareInt{
 
         // Adds flight reservation to this customer.
         public boolean reserveFlight(int id, int customerID, int flightNum)
-        throws RemoteException, InvalidTransactionException
+        throws RemoteException
         {
                 if (tM.reserveFlight(id, customerID, flightNum)) {
                         boolean result = rmFlights.reserveFlight(id,customerID,flightNum);
@@ -297,7 +315,7 @@ return true;
 
         // Delete cars from a location
         public boolean deleteCars(int id, String location)
-                        throws RemoteException, InvalidTransactionException
+                        throws RemoteException
                         {
 				if (tM.deleteCars(id,location))
                				 return (rmCars.deleteCars(id,location));
@@ -307,7 +325,7 @@ return true;
 
         // Returns the number of cars available at a location
         public int queryCars(int id, String location)
-                        throws RemoteException, InvalidTransactionException
+                        throws RemoteException
                         {
 				if (tM.queryCars(id,location))
                 			{return (rmCars.queryCars(id,location));}
@@ -318,7 +336,7 @@ return true;
 
         // Returns price of cars at this location
         public int queryCarsPrice(int id, String location)
-                        throws RemoteException, InvalidTransactionException
+                        throws RemoteException
                         {
 				if (tM.queryCarsPrice(id,location))
                 			{return (rmCars.queryCarsPrice(id,location));}
@@ -328,7 +346,7 @@ return true;
 
 
         public boolean reserveCar(int id, int customerID, String location)
-                        throws RemoteException, InvalidTransactionException
+                        throws RemoteException
         {
 			if (tM.reserveCar(id,customerID,location))
 			{
@@ -378,7 +396,7 @@ return true;
 
         // Delete rooms from a location
         public boolean deleteRooms(int id, String location)
-                        throws RemoteException, InvalidTransactionException
+                        throws RemoteException
                         {
 				if (tM.deleteRooms(id,location))
                 			return (rmRooms.deleteRooms(id, location));
@@ -389,7 +407,7 @@ return true;
 
         // Returns the number of rooms available at a location
         public int queryRooms(int id, String location)
-                        throws RemoteException, InvalidTransactionException
+                        throws RemoteException
                         {
 				if (tM.queryRooms(id,location))
                 			return (rmRooms.queryRooms(id,location));
@@ -402,7 +420,7 @@ return true;
 
         // Returns room price at this location
         public int queryRoomsPrice(int id, String location)
-                        throws RemoteException, InvalidTransactionException
+                        throws RemoteException
                         {
 				if (tM.queryRoomsPrice(id,location))
                 			return (rmRooms.queryRoomsPrice(id,location));
@@ -413,7 +431,7 @@ return true;
 
         // Adds room reservation to this customer.
         public boolean reserveRoom(int id, int customerID, String location)
-                        throws RemoteException, InvalidTransactionException
+                        throws RemoteException
         {
 		if (tM.reserveRoom(id,customerID,location))
 		{
@@ -445,7 +463,7 @@ return true;
 
 
         public int newCustomer(int id)
-                        throws RemoteException, InvalidTransactionException
+                        throws RemoteException
                         {
                 Trace.info("INFO: RM::newCustomer(" + id + ") called" );
                 // Generate a globally unique ID for the new customer
@@ -478,7 +496,7 @@ return true;
                         {
                 Trace.info("INFO: RM::newCustomer(" + id + ", " + customerID + ") called" );
                 Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
-                if ( cust == null ) {
+                if ( cust == null && tM.newCustomer(id,customerID)) {
                         cust = new Customer(customerID);
                         writeData( id, cust.getKey(), cust );
                         Trace.info("INFO: RM::newCustomer(" + id + ", " + customerID + ") created a new customer" );
@@ -501,7 +519,7 @@ return true;
 
         // Deletes customer from the database.
         public boolean deleteCustomer(int id, int customerID)
-                        throws RemoteException, InvalidTransactionException
+                        throws RemoteException
         {
                 Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") called" );
 		if(tM.deleteCustomer(id,customerID))
@@ -557,7 +575,7 @@ return true;
 
         // return a bill
         public String queryCustomerInfo(int id, int customerID)
-                        throws RemoteException, InvalidTransactionException
+                        throws RemoteException
         {
                 Trace.info("RM::queryCustomerInfo(" + id + ", " + customerID + ") called" );
 		if(tM.queryCustomerInfo(id,customerID))
@@ -719,7 +737,7 @@ return true;
 
         // Reserve an itinerary
         public boolean itinerary(int id,int customer,Vector flightNumbers,String location,boolean car,boolean room)
-                        throws RemoteException, InvalidTransactionException
+                        throws RemoteException
                         {
                 boolean carBool = true;
                 boolean roomBool = true;
@@ -728,8 +746,53 @@ return true;
                 if (car==true)
                 {
                         carBool = reserveCar(id,customer,location);
+
+			if (room==true)
+			{
+				roomBool = reserveRoom(id,customer,location);
+
+				for (int i = 0; i < flightNumbers.size(); i++)
+				{
+					int flightNum = Integer.parseInt((String)flightNumbers.get(i));
+					flightBool = reserveFlight(id,customer,flightNum);	
+				}
+			}
+
+			else
+			{
+				for (int i = 0; i < flightNumbers.size(); i++)
+				{
+					int flightNum = Integer.parseInt((String)flightNumbers.get(i));
+					flightBool = reserveFlight(id,customer,flightNum);
+				}
+			}
                 }
 
+
+		else
+		{
+			if (room == true)
+			{
+				roomBool = reserveRoom(id,customer,location);
+
+				for (int i = 0; i < flightNumbers.size(); i++)
+				{
+					int flightNum = Integer.parseInt((String)flightNumbers.get(i));
+					flightBool = reserveFlight(id,customer,flightNum);
+				}
+			}
+
+			else
+			{
+				for (int i = 0; i < flightNumbers.size(); i++)
+				{
+					int flightNum = Integer.parseInt((String)flightNumbers.get(i));
+					flightBool = reserveFlight(id,customer,flightNum);
+				}
+			}
+		}
+
+		/*
                 if (room==true)
                 {
                         roomBool = reserveRoom(id,customer,location);
@@ -740,7 +803,7 @@ return true;
                 {
                         int flightNum = Integer.parseInt((String)flightNumbers.get(i));
                         flightBool = reserveFlight(id,customer,flightNum);
-                }
+                }*/
 
                 if (carBool == true && roomBool == true && flightBool == true)
                 { return true; }
@@ -762,7 +825,7 @@ return true;
                         Trace.warn("Invalid flight reservation");
                         return false;
                 }
-                        }
+             }
 
 
 

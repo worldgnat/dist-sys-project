@@ -1,4 +1,5 @@
 // -------------------------------
+
 // adapted from Kevin T. Manley
 // CSE 593
 //
@@ -13,6 +14,7 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.RMISecurityManager;
+import exceptions.*;
 
 public class ResourceManagerImpl implements ResourceManager
 {
@@ -24,16 +26,15 @@ public class ResourceManagerImpl implements ResourceManager
     public static void main(String args[]) {
         // Figure out where server is running
         String server = "localhost";
-        int port = 2030;
-        String binding = "flights29";
 
-        if (args.length == 2) {
+        int port = 2030;
+
+        if (args.length == 1) {
             server = server + ":" + args[0];
             port = Integer.parseInt(args[0]);
-            binding = args[1];
-        } else if (args.length != 0) {
+        } else if (args.length != 0 && args.length != 1) {
             System.err.println ("Wrong usage");
-            System.out.println("Usage: java ResImpl.ResourceManagerImpl port registry_binding");
+            System.out.println("Usage: java ResImpl.ResourceManagerImpl [port]");
             System.exit(1);
         }
 
@@ -45,7 +46,7 @@ public class ResourceManagerImpl implements ResourceManager
 
             // Bind the remote object's stub in the registry
             Registry registry = LocateRegistry.getRegistry(port);
-            registry.rebind(binding, rm);
+            registry.rebind("flights29", rm);
 
             System.err.println("Server ready");
         } catch (Exception e) {
@@ -62,7 +63,9 @@ public class ResourceManagerImpl implements ResourceManager
     public ResourceManagerImpl() throws RemoteException {
     }
      
-
+	public boolean shutdown(){
+		return true;
+	}
     // Reads a data item
     private RMItem readData( int id, String key )
     {
@@ -112,8 +115,22 @@ public class ResourceManagerImpl implements ResourceManager
         }
     }
     
+
+
+	public void start(int tid) throws RemoteException{
+		synchronized(openTransactions){
+			if (openTransactions.containsKey(tid)==false)
+			{
+				Queue<Object[]> queue = new LinkedBlockingQueue<Object[]>();
+				openTransactions.put(tid,queue);
+				System.out.println("Started transaction " + tid);
+			}
+		}
+	}
+
+
     @SuppressWarnings("unchecked")
-        public void commit(int tid) throws RemoteException{
+        public void commit(int tid) throws RemoteException, InvalidTransactionException, TransactionAbortedException{
             synchronized(openTransactions) {
 		if (openTransactions.containsKey(tid))
 		{
@@ -131,14 +148,22 @@ public class ResourceManagerImpl implements ResourceManager
                     }
                     //The transaction is now closed, so delete it.
                     openTransactions.remove(tid);
+		    System.out.println("Committed transaction " + tid);
 		}
+
+		else
+			throw new InvalidTransactionException(tid);
             }
     }
     
-    public void abort(int tid) throws RemoteException{
+    public void abort(int tid) throws RemoteException, InvalidTransactionException{
             synchronized(openTransactions) {
 		if (openTransactions.containsKey(tid))
-                    openTransactions.remove(tid);
+                {    openTransactions.remove(tid);
+		    System.out.println("Aborted transaction " + tid);
+		}
+		else
+			throw new InvalidTransactionException(tid);
             }
     }
     
