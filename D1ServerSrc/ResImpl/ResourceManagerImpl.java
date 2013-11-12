@@ -27,7 +27,7 @@ public class ResourceManagerImpl implements ResourceManager
         // Figure out where server is running
         String server = "localhost";
 
-        int port = 2030;
+        int port = 1030;
         String binding = "flights29";
 
         if (args.length == 2) {

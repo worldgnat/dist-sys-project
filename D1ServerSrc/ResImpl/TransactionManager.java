@@ -72,11 +72,7 @@ public class TransactionManager {
                 	else {
                 		throw new InvalidTransactionException(tid);
                 	}
-			// This is a bit redundant, but the kicker will call this and the middleware must be made aware
-			try
-			{ mid.abort(tid); }
-			catch (RemoteException e)
-			{ System.out.println(e); }
+			
                 }
         }
         

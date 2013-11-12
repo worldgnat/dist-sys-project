@@ -1,4 +1,4 @@
-grant codeBase "file:/home/2009/nhrist2/network/clientsrc/" {
+grant codeBase "file:/home/2009/nhrist2/pr/dist-sys-project/D1ClientSrc" {
     permission java.security.AllPermission;
 };
 
