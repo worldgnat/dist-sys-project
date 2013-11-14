@@ -3,5 +3,6 @@
 	<classpathentry kind="src" path=""/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="/D1ServerSrc/ResInterface.jar"/>
+	<classpathentry kind="lib" path="exceptions.jar"/>
 	<classpathentry kind="output" path=""/>
 </classpath>

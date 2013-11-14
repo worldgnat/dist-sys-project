@@ -1,6 +1,9 @@
 #!/bin/bash
+
+export CLASSPATH=$(pwd)/D1ServerSrc
+rmiregistry $1 &
 if [ $# -ge 2 ]; then 
-	export CLASSPATH=$(pwd)/D1ServerSrc
-	rmiregistry $1
-	java -Djava.security.policy=D1ServerSrc/server.policy -Djava.rmi.codebase=$(pwd)/D1ServerSrc ResImpl.ResourceManager $1 $2
-fi
+	java -Djava.security.policy=D1ServerSrc/server.policy -Djava.rmi.server.codebase=$(pwd)/D1ServerSrc ResImpl.ResourceManagerImpl $1 $2
+else
+	java -Djava.security.policy=D1ServerSrc/server.policy -Djaja.rmi.server.codebase=$(pwd)/D1ServerSrc ResImpl.Middleware localhost $1
+fi 

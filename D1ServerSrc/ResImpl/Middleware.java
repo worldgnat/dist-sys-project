@@ -40,15 +40,14 @@ public class Middleware implements MiddlewareInt{
 
                 if (args.length > 0)
                 {
-                        server = args[0];
+                        port = Integer.parseInt(args[0]);
+                        serverCars = args[1];
+                        serverRooms = args[2];
+                        serverFlights = args[3];
                 }
-                if (args.length > 1)
+                else
                 {
-                        port = Integer.parseInt(args[1]);
-                }
-                if (args.length > 2)
-                {
-                        System.out.println ("Usage: java Middleware [rmihost [rmiport]]");
+                        System.out.println ("Usage: java Middleware rmiport serverCars serverRooms serverFlights");
                         System.exit(1);
                 }
 
