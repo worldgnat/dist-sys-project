@@ -136,8 +136,23 @@ public class Middleware implements MiddlewareInt{
 				Object[] values;
 				while(!queue.isEmpty()){
 					values = queue.remove();
-					if (values[1] != null)
-					{ m_itemHT.put(values[0], (RMItem)values[1]); }
+					if (values.length == 4) {
+						int customerID = (int)values[0];
+						Customer cust = (Customer) readData(tid, Customer.getKey(customerID) );      
+						String key = (String)values[1];
+						String location = (String)values[2];
+						int price = (int)values[3];
+		                if( cust == null ) {
+		                        Trace.warn("Middleware::write customer( " + tid + ", " + customerID + ", " + key + ", "+location+") failed--customer doesn't exist" );
+		                }
+		                else{
+		                    cust.reserve(key,location,price);
+		                	m_itemHT.put(cust.getKey(), cust);
+		                }
+					}
+					else if (values[1] != null) {
+						m_itemHT.put(values[0], (RMItem)values[1]); 
+					}
 					else
 					{ m_itemHT.remove(values[0]);}
 			        }
@@ -617,6 +632,20 @@ return true;
         	}
     	}
 
+	private void writeData(int id, int customerId, String key, String location, int price) {
+		synchronized(openTransactions) {
+		                Object[] values = {customerId, key, location, price};
+		                if (openTransactions.containsKey(id)) {
+		                        //If the transaction is already opened, enqueue this update
+		                        openTransactions.get(id).add(values);
+		                }
+		                else { //Otherwise, create a queue for the transaction, enqueue the update, and put the transaction in the openTransactions tree.
+		                        Queue<Object[]> temp = new LinkedBlockingQueue<Object[]>();
+		                        temp.add(values);
+		                openTransactions.put(id, temp);
+		                }
+		        	}
+	}
 	protected RMItem removeData(int id, String key) {
         	synchronized(m_itemHT) {
             		synchronized(openTransactions) {
@@ -724,8 +753,7 @@ return true;
                         return false;
                 }
                 else{
-                        cust.reserve(key,location,price);
-                        writeData(id,cust.getKey(),cust);
+                        writeData(id, customerID, key, location, price);
                         return true;
                 }
 
