@@ -30,7 +30,7 @@ public class Middleware implements MiddlewareInt{
                 // The server names and ports for each RM
                 String serverCars="open-13.cs.mcgill.ca";
                 String serverRooms="open-11.cs.mcgill.ca";
-                String serverFlights="open-14.cs.mcgill.ca";
+                String serverFlights="open-15.cs.mcgill.ca";
                 int portCars = 4030;
                 int portRooms = 1030;
                 int portFlights = 2030;
@@ -108,9 +108,9 @@ public class Middleware implements MiddlewareInt{
 		return true;
 	}
         public void start(int tid) throws RemoteException{
-		//synchronized (openTransactions) {
-			//if (openTransactions.containsKey(tid) == false)
-			//{
+		synchronized (openTransactions) {
+			if (openTransactions.containsKey(tid) == false)
+			{
 				tM.start(tid);
 				rmFlights.start(tid);
 				rmCars.start(tid);
@@ -118,8 +118,8 @@ public class Middleware implements MiddlewareInt{
 				Queue<Object[]> queue = new LinkedBlockingQueue<Object[]>();
 				openTransactions.put(tid,queue);
 				System.out.println("Started transaction " + tid);
-			//}
-		//}
+			}
+		}
         }
 
         public void commit(int tid) throws RemoteException, InvalidTransactionException, TransactionAbortedException{
