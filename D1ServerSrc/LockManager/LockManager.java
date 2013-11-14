@@ -61,10 +61,9 @@ public class LockManager
                         }
                          
                         if (bConvert.get(0) == true) {
-                            // lock conversion 
-                            // *** ADD CODE HERE *** to carry out the lock conversion in the
-                            // lock table
-                        	((DataObj)this.lockTable.get(dataObj)).setLockType(DataObj.WRITE);
+                        	if (this.lockTable.contains(dataObj)) {
+                        		((DataObj)this.lockTable.get(dataObj)).setLockType(DataObj.WRITE);
+                        	}
                         } else {
                             // a lock request that is not lock conversion
                             this.lockTable.add(trxnObj);
