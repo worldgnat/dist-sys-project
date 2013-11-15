@@ -51,12 +51,41 @@ public class client implements Runnable
 		}
 
 		if (System.getSecurityManager() == null) {
-			//System.setSecurityManager(new RMISecurityManager());
+			System.setSecurityManager(new RMISecurityManager());
 		}
 	}
 	
 	public client(LinkedBlockingQueue<Long> responseTimes, ArrayList<String> commands, String server, int port, int delay) {
-		this(responseTimes, commands, server, port);
+		this.commands = commands;
+		this.responseTimes = responseTimes;
+		running = true;
+		
+		try 
+		{
+			// get a reference to the rmiregistry
+			Registry registry = LocateRegistry.getRegistry(server, port);
+			// get the proxy and the remote reference by rmiregistry lookup
+			rm = (MiddlewareInt) registry.lookup("middleware29");
+			if(rm!=null)
+			{
+				System.out.println("Successful");
+				System.out.println("Connected to RM");
+			}
+			else
+			{
+				System.out.println("Unsuccessful");
+			}
+			// make call on remote method
+		} 
+		catch (Exception e) 
+		{    
+			System.err.println("Client exception: " + e.toString());
+			e.printStackTrace();
+		}
+
+		if (System.getSecurityManager() == null) {
+			System.setSecurityManager(new RMISecurityManager());
+		}
 		this.delay = delay;
 	}
 	public static void main(String args[])
