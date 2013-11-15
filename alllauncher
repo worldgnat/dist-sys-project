@@ -1,5 +1,6 @@
 #!/bin/bash
-launcher="./Documents/Distributed/Project/launcher.sh"
+dir="./Documents/Distributed/Project"
+launcher="../launcher.sh"
 username="pdavou"
 old_ifs=$IFS
 IFS=$'\n'
@@ -9,7 +10,7 @@ if [ $# -eq 2 ]; then
 	for i in $(cat $1); do
 		echo "Connecting to " $username"@"$(echo $i | awk '{print $1}')
 		echo "Running screen $launcher $(echo $i | awk '{print $2 " "$3}')"
-		ssh -t  $username"@"$(echo $i | awk '{print $1}')  screen $launcher $(echo $i | awk '{print $2 " " $3}')
+		ssh -t  $username"@"$(echo $i | awk '{print $1}')  cd $dir"/D1ServerSrc" '&&' screen $launcher $(echo $i | awk '{print $2 " " $3}')
 		export rmihosts="$rmihosts $(echo $i | awk '{print $1}')"
 	done
 	echo "Hosts launched on $rmihosts"

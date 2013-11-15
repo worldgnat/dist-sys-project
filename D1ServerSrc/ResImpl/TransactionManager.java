@@ -62,12 +62,13 @@ public class TransactionManager {
         }
         
         // Release all the locks and remove the transaction from the list
-        public void abort(int tid) throws InvalidTransactionException
+        public void abort(int tid) throws RemoteException,InvalidTransactionException
         {
                 synchronized(tList) {
                 	if (tList.containsKey(tid)) {
                 		lm.UnlockAll(tid);
                         tList.remove(tid);
+                        mid.tmAbort(tid);
                 	}
                 	else {
                 		throw new InvalidTransactionException(tid);
@@ -79,7 +80,7 @@ public class TransactionManager {
         /*********************************
         ***** FLIGHTS ****
         *********************************/
-	public boolean addFlight(int id, int flightNum, int flightSeats, int flightPrice) throws InvalidTransactionException {
+	public boolean addFlight(int id, int flightNum, int flightSeats, int flightPrice) throws RemoteException, InvalidTransactionException {
 		try{
 			synchronized (tList) {
 				if (tList.containsKey(id)){
@@ -132,7 +133,7 @@ public class TransactionManager {
                 return false;
         }
         
-        public boolean deleteFlight(int id, int flightNum) throws InvalidTransactionException 
+        public boolean deleteFlight(int id, int flightNum) throws InvalidTransactionException, RemoteException
         {
                 try {
                         synchronized (tList) {
@@ -155,7 +156,7 @@ public class TransactionManager {
                 return false;
         }
         
-        public boolean queryFlight(int id, int flightNum) throws InvalidTransactionException 
+        public boolean queryFlight(int id, int flightNum) throws InvalidTransactionException, RemoteException
         {
                 try {
                         synchronized (tList) {
@@ -178,7 +179,7 @@ public class TransactionManager {
                 return false;
         }
         
-        public boolean queryFlightPrice(int id, int flightNum) throws InvalidTransactionException 
+        public boolean queryFlightPrice(int id, int flightNum) throws InvalidTransactionException, RemoteException 
         {
                 try {
                         synchronized (tList) {
@@ -205,7 +206,7 @@ public class TransactionManager {
         ***** CARS ****
         *********************************/
 
-	public boolean addCars(int id, String location, int count, int price) throws InvalidTransactionException {
+	public boolean addCars(int id, String location, int count, int price) throws InvalidTransactionException, RemoteException {
 		try {
 			synchronized(tList){
 				if (tList.containsKey(id)){
@@ -229,7 +230,7 @@ public class TransactionManager {
 
 	}
         
-        public boolean reserveCar(int id, int customerID, String location) throws InvalidTransactionException 
+        public boolean reserveCar(int id, int customerID, String location) throws InvalidTransactionException, RemoteException 
         {
                 try {
                         synchronized (tList) {
@@ -255,7 +256,7 @@ public class TransactionManager {
                 return false;
         }
         
-        public boolean deleteCars(int id, String location) throws InvalidTransactionException 
+        public boolean deleteCars(int id, String location) throws InvalidTransactionException, RemoteException 
         {
                 try {
                         synchronized (tList) {
@@ -280,7 +281,7 @@ public class TransactionManager {
                 return false;
         }
         
-        public boolean queryCars(int id, String location) throws InvalidTransactionException 
+        public boolean queryCars(int id, String location) throws InvalidTransactionException, RemoteException 
         {
                 try {
                         synchronized (tList) {
@@ -303,7 +304,7 @@ public class TransactionManager {
                 return false;
         }
         
-        public boolean queryCarsPrice(int id, String location) throws InvalidTransactionException 
+        public boolean queryCarsPrice(int id, String location) throws InvalidTransactionException, RemoteException 
         {
                 try {
                         synchronized (tList) {
@@ -331,7 +332,7 @@ public class TransactionManager {
         ***** ROOMS ****
         *********************************/
         
-        public boolean addRooms(int id, String location, int count, int price) throws InvalidTransactionException {
+        public boolean addRooms(int id, String location, int count, int price) throws InvalidTransactionException, RemoteException {
 		try{
 			synchronized (tList){
 				if (tList.containsKey(id)){
@@ -356,7 +357,7 @@ public class TransactionManager {
 	}
 
 
-        public boolean reserveRoom(int id, int customerID, String location) throws InvalidTransactionException 
+        public boolean reserveRoom(int id, int customerID, String location) throws InvalidTransactionException, RemoteException 
         {
                 try {
                         synchronized (tList) {
@@ -381,7 +382,7 @@ public class TransactionManager {
                 return false;
         }
         
-        public boolean deleteRooms(int id, String location) throws InvalidTransactionException 
+        public boolean deleteRooms(int id, String location) throws InvalidTransactionException, RemoteException 
         {
                 try {
                         synchronized (tList) {
@@ -404,7 +405,7 @@ public class TransactionManager {
                 return false;
         }
         
-        public boolean queryRooms(int id, String location) throws InvalidTransactionException 
+        public boolean queryRooms(int id, String location) throws InvalidTransactionException, RemoteException 
         {
                 try {
                         synchronized (tList) {
@@ -427,7 +428,7 @@ public class TransactionManager {
                 return false;
         }
         
-        public boolean queryRoomsPrice(int id, String location) throws InvalidTransactionException 
+        public boolean queryRoomsPrice(int id, String location) throws InvalidTransactionException, RemoteException 
         {
                 try {
                         synchronized (tList) {
@@ -455,7 +456,7 @@ public class TransactionManager {
          * CUSTOMERS
          * @throws RemoteException
          **************************************/
-	public boolean newCustomer(int id, int cid) throws InvalidTransactionException {
+	public boolean newCustomer(int id, int cid) throws InvalidTransactionException, RemoteException {
 		try {
 			synchronized (tList) {
 				if (tList.containsKey(id)){
@@ -512,7 +513,7 @@ public class TransactionManager {
                 return false;
         }
         
-        public boolean queryCustomerInfo(int id, int customerID) throws InvalidTransactionException 
+        public boolean queryCustomerInfo(int id, int customerID) throws InvalidTransactionException, RemoteException 
         {
                 try{
                         synchronized (tList) {
@@ -533,7 +534,7 @@ public class TransactionManager {
                 return false;
         }
         
-        public boolean itinerary(int id,int customer,Vector flightNumbers,String location,boolean car,boolean room) throws InvalidTransactionException 
+        public boolean itinerary(int id,int customer,Vector flightNumbers,String location,boolean car,boolean room) throws InvalidTransactionException, RemoteException 
         {
                 try{
                         synchronized (tList) {
@@ -593,7 +594,7 @@ class TransactionKicker implements Runnable {
                                         manager.abort(t);
                                         transactions.remove(t);
                                 	}
-                                	catch (InvalidTransactionException er ) {
+                                	catch (Exception er ) {
                                 		System.err.println("Could not kick transaction " + t +"; it may already have been aborted!");
                                 	}
                                 }

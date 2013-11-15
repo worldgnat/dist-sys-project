@@ -167,18 +167,21 @@ public class Middleware implements MiddlewareInt{
        		 }
 	}
         public void abort(int tid) throws RemoteException, InvalidTransactionException{
-                rmFlights.abort(tid);
-                rmCars.abort(tid);
-                rmRooms.abort(tid);
                 tM.abort(tid);
-		
-		synchronized(openTransactions){
-			if (openTransactions.containsKey(tid))
-			openTransactions.remove(tid);
-			else
-			throw new InvalidTransactionException(tid);
-		}
-		System.out.println("Aborted transaction " + tid);
+                tmAbort(tid);
+        }
+        
+        public void tmAbort (int tid) throws RemoteException, InvalidTransactionException{
+        	rmFlights.abort(tid);
+            rmCars.abort(tid);
+            rmRooms.abort(tid);
+            synchronized(openTransactions){
+    			if (openTransactions.containsKey(tid))
+    			openTransactions.remove(tid);
+    			else
+    			throw new InvalidTransactionException(tid);
+    		}
+    		System.out.println("Aborted transaction " + tid);
         }
 
 
