@@ -58,7 +58,7 @@ public interface MiddlewareInt extends Remote
 */
 
     public boolean addFlight(int id, int flightNum, int flightSeats, int flightPrice)
-        throws RemoteException;
+        throws RemoteException, InvalidTransactionException;
    
     
     
