@@ -1,6 +1,6 @@
 #!/bin/bash
 dir="./Documents/Distributed/Project"
-launcher="../launcher.sh"
+launcher="./launcher.sh"
 username="pdavou"
 old_ifs=$IFS
 IFS=$'\n'
@@ -8,13 +8,16 @@ if [ $# -eq 2 ]; then
 	
 	export rmihosts=""
 	for i in $(cat $1); do
-		echo "Connecting to " $username"@"$(echo $i | awk '{print $1}')
-		echo "Running screen $launcher $(echo $i | awk '{print $2 " "$3}')"
-		ssh -t  $username"@"$(echo $i | awk '{print $1}')  cd $dir"/D1ServerSrc" '&&' screen $launcher $(echo $i | awk '{print $2 " " $3}')
-		export rmihosts="$rmihosts $(echo $i | awk '{print $1}')"
+		host=$(echo $i | awk '{print $1}')
+		args=$(echo $i | awk '{print $2 " " $3}')
+		command="cd $dir" '&&' "screen $launcher $args"
+		echo "Connecting to " $username"@"$host
+		echo "Running screen $launcher $args"
+		ssh -t $username"@"$host  cd $dir '&&' screen $launcher $args
+		export rmihosts="$rmihosts $host"
 	done
 	echo "Hosts launched on $rmihosts"
-	ssh -t  $username"@"$2 screen $launcher 4031 $rmihosts
+	ssh -t  $username"@"$2 cd $dir '&&' screen $launcher 4031 $rmihosts
 else
 	echo "usage: alllauncher config_file middleware_host"
 	exit 1
