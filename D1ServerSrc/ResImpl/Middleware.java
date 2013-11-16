@@ -190,10 +190,11 @@ public class Middleware implements MiddlewareInt{
          ***********************************/
         // Just connect to the Flights RM, tell it to add the flight, and catch the exception
         public boolean addFlight(int id, int flightNum, int flightSeats, int flightPrice)
-                        throws RemoteException, InvalidTransactionException
-                        {
-	synchronized (openTransactions){
-		if (openTransactions.containsKey(id)){
+        throws RemoteException, InvalidTransactionException
+        {
+        	synchronized (openTransactions){
+        		if (openTransactions.containsKey(id)==false){ throw new InvalidTransactionException(id); }
+        	}
                         if(rmFlights!=null && tM.addFlight(id,flightNum,flightSeats,flightPrice) == true)
                         {
                                 rmFlights.addFlight(id,flightNum,flightSeats,flightPrice);
@@ -203,73 +204,65 @@ public class Middleware implements MiddlewareInt{
                         {
                                 return false;
                         }
-                        // make call on remote method
-                
-		}
-		else
-			throw new InvalidTransactionException(id);
-	}
+                        // make call on remote method		
+	    }
 
-                        }
+               
 
 
         public boolean deleteFlight(int id, int flightNum)
-                        throws RemoteException, InvalidTransactionException
-                        {
+        throws RemoteException, InvalidTransactionException
+        {
 			synchronized(openTransactions){
-				if (openTransactions.containsKey(id)){
+				if (openTransactions.containsKey(id) == false){ throw new InvalidTransactionException(id); }
+			}
 				if (tM.deleteFlight(id,flightNum))
                 			return (rmFlights.deleteFlight(id, flightNum));
 				else
 					return false;
-				}
-				else
-					throw new InvalidTransactionException(id);
-			}
-                        }
+			
+        }
 
         // Returns the number of empty seats on this flight
         public int queryFlight(int id, int flightNum)
-                        throws RemoteException, InvalidTransactionException
-                        {
+        throws RemoteException, InvalidTransactionException
+         {
 			synchronized(openTransactions){
-				if (openTransactions.containsKey(id)){
+				if (openTransactions.containsKey(id) == false){ throw new InvalidTransactionException(id); }
+			}
 				if (tM.queryFlight(id,flightNum))
                 			return (rmFlights.queryFlight(id, flightNum));
 				else
 					return -1;
-				}
-				else
-					throw new InvalidTransactionException(id);
-			}
-                        }
+				
+			
+         }
 
 
 
         // Returns price of this flight
         public int queryFlightPrice(int id, int flightNum )
-                        throws RemoteException, InvalidTransactionException
-                        {
+        throws RemoteException, InvalidTransactionException
+        {
 			synchronized(openTransactions){
-				if (openTransactions.containsKey(id))
-				{
+				if (openTransactions.containsKey(id) == false) { throw new InvalidTransactionException(id); }
+			}
 				if (tM.queryFlightPrice(id,flightNum))
                				 return (rmFlights.queryFlightPrice(id,flightNum));
 				else
 					return -1;
-				}
-				else
-					throw new InvalidTransactionException(id);
-			}
-                        }
+			
+		
+         }
 
 
         // Adds flight reservation to this customer.
         public boolean reserveFlight(int id, int customerID, int flightNum)
         throws RemoteException, InvalidTransactionException
         {
-	synchronized(openTransactions){
-		if (openTransactions.containsKey(id)){
+        	synchronized(openTransactions){
+        		if (openTransactions.containsKey(id) == false ){ throw new InvalidTransactionException(id); }
+        	}
                 if (tM.reserveFlight(id, customerID, flightNum)) {
                         boolean result = rmFlights.reserveFlight(id,customerID,flightNum);
                         if (result)
@@ -280,10 +273,7 @@ public class Middleware implements MiddlewareInt{
                         else {return result; }
                 }
                 else return false;
-		}
-		else
-			throw new InvalidTransactionException(id);
-	}
+		
         }
 
 
@@ -328,10 +318,11 @@ return true;
 
         // Just connect to the Cars RM, tell it to add the car and catch the exception
         public boolean addCars(int id, String location, int count, int price)
-                        throws RemoteException, InvalidTransactionException
-                        {
-	synchronized(openTransactions){
-		if (openTransactions.containsKey(id)){
+        throws RemoteException, InvalidTransactionException
+        {
+        	synchronized(openTransactions){
+        		if (openTransactions.containsKey(id) == false){ throw new InvalidTransactionException(id); }
+        	}
                
                         if(rmCars!=null && tM.addCars(id,location,count,price) == true)
                         {
@@ -343,70 +334,61 @@ return true;
                                 return false;
                         }
                         // make call on remote method
-                }
-		else
-			throw new InvalidTransactionException(id);
-	}
-                        }
+   
+        }
 
 
         // Delete cars from a location
         public boolean deleteCars(int id, String location)
-                        throws RemoteException, InvalidTransactionException
-                        {
+        throws RemoteException, InvalidTransactionException
+        {
 			synchronized(openTransactions){
-				if (openTransactions.containsKey(id)){
+				if (openTransactions.containsKey(id) == false){ throw new InvalidTransactionException(id); }
+			}
 					if (tM.deleteCars(id,location))
                				 return (rmCars.deleteCars(id,location));
 					else
 					return false;
-				}
-				else
-					throw new InvalidTransactionException(id);
-				}
+				
 			
-                        }
+       }
 
         // Returns the number of cars available at a location
         public int queryCars(int id, String location)
-                        throws RemoteException, InvalidTransactionException
-                        {
+        throws RemoteException, InvalidTransactionException
+        {
 			synchronized(openTransactions){
-				if (openTransactions.containsKey(id))
-				{
+				if (openTransactions.containsKey(id) == false) { throw new InvalidTransactionException(id); }
+			}
 				if (tM.queryCars(id,location))
                 			{return (rmCars.queryCars(id,location));}
 				else
 					return -1;
-				}
-				else
-					throw new InvalidTransactionException(id);
-			}
-                        }
+			
+         }
 
 
         // Returns price of cars at this location
         public int queryCarsPrice(int id, String location)
-                        throws RemoteException, InvalidTransactionException
-                        {
+        throws RemoteException, InvalidTransactionException
+        {
 			synchronized(openTransactions){
-				if (openTransactions.containsKey(id)){
+				if (openTransactions.containsKey(id) == false){ throw new InvalidTransactionException(id); }
+			}
 				if (tM.queryCarsPrice(id,location))
                 			{return (rmCars.queryCarsPrice(id,location));}
 				else
 					return -1;
-				}
-				else
-					throw new InvalidTransactionException(id);
-			}
-                        }
+         }
 
 
         public boolean reserveCar(int id, int customerID, String location)
-                        throws RemoteException, InvalidTransactionException
+        throws RemoteException, InvalidTransactionException
         {
-	synchronized(openTransactions){
-		if (openTransactions.containsKey(id)){
+        	synchronized(openTransactions){
+        		if (openTransactions.containsKey(id) == false){ throw new InvalidTransactionException(id); }
+        	}
+        	
 			if (tM.reserveCar(id,customerID,location))
 			{
                 		boolean result = rmCars.reserveCar(id,customerID,location);
@@ -419,10 +401,7 @@ return true;
 			}
 			else
 				{return false;}
-		}
-		else
-			throw new InvalidTransactionException(id);
-	}
+	
         }
 
         /*************************************
@@ -431,10 +410,11 @@ return true;
 
         // Just connect to the Rooms RM, tell it to add the room, and catch the exception
         public boolean addRooms(int id, String location, int count, int price)
-                        throws RemoteException, InvalidTransactionException
-                        {
-	synchronized(openTransactions){
-		if (openTransactions.containsKey(id)){
+        throws RemoteException, InvalidTransactionException
+        {
+        	synchronized(openTransactions){
+        		if (openTransactions.containsKey(id) == false) { throw new InvalidTransactionException(id); }
+        	}
              
                         if(rmRooms!=null && tM.addRooms(id,location,count,price) == true)
                         {
@@ -445,76 +425,65 @@ return true;
                         {
                                 return false;
                         }
-		}
-		else 
-			throw new InvalidTransactionException(id);
-	}
-                        
-
-                        }
+                      
+       }
 
 
         // Delete rooms from a location
         public boolean deleteRooms(int id, String location)
-                        throws RemoteException, InvalidTransactionException
-                        {
+        throws RemoteException, InvalidTransactionException
+        {
 			synchronized(openTransactions){
-				if (openTransactions.containsKey(id)){
+				if (openTransactions.containsKey(id) == false){ throw new InvalidTransactionException(id); }
+			}
 				if (tM.deleteRooms(id,location))
                 			return (rmRooms.deleteRooms(id, location));
 				else
 					return false;
-				}
-				else
-					throw new InvalidTransactionException(id);
-			}
 
-                        }
+        }
 
         // Returns the number of rooms available at a location
         public int queryRooms(int id, String location)
-                        throws RemoteException, InvalidTransactionException
-                        {
+        throws RemoteException, InvalidTransactionException
+        {
 			synchronized(openTransactions){
-				if (openTransactions.containsKey(id)){
+				if (openTransactions.containsKey(id) == false){ throw new InvalidTransactionException(id); }
+			}
 				if (tM.queryRooms(id,location))
                 			return (rmRooms.queryRooms(id,location));
 				else
 					return -1;
-				}
-				else
-					throw new InvalidTransactionException(id);
-			}
-                        }
+			
+        }
 
 
 
 
         // Returns room price at this location
         public int queryRoomsPrice(int id, String location)
-                        throws RemoteException, InvalidTransactionException
-                        {
+        throws RemoteException, InvalidTransactionException
+        {
 			synchronized(openTransactions){
-				if (openTransactions.containsKey(id)){
+				if (openTransactions.containsKey(id) == false){ throw new InvalidTransactionException(id); }
+			}
 				if (tM.queryRoomsPrice(id,location))
                 			return (rmRooms.queryRoomsPrice(id,location));
 				else
 					return -1;
-				}
-				else
-					throw new InvalidTransactionException(id);
-			}
-                        }
+			
+        }
 
 
         // Adds room reservation to this customer.
         public boolean reserveRoom(int id, int customerID, String location)
-                        throws RemoteException, InvalidTransactionException
+        throws RemoteException, InvalidTransactionException
         {
-	synchronized(openTransactions){
-		if (openTransactions.containsKey(id)){
-		if (tM.reserveRoom(id,customerID,location))
-		{
+        	synchronized(openTransactions){
+        		if (openTransactions.containsKey(id)){ throw new InvalidTransactionException(id); }
+        	}
+        	if (tM.reserveRoom(id,customerID,location))
+        	{
                 	boolean result = rmRooms.reserveRoom(id,customerID,location);
                 	if (result)
                 	{
@@ -523,13 +492,10 @@ return true;
                 	}
                 	else
                 	{ return result; }
-		}
-		else
+        	}
+        	else
 			return false;
-		}
-		else
-			throw new InvalidTransactionException(id);
-	}
+	
         }
 
 
@@ -547,10 +513,11 @@ return true;
 
 
         public int newCustomer(int id)
-                        throws RemoteException, InvalidTransactionException
-                        {
-synchronized(openTransactions){
-	if (openTransactions.containsKey(id)){
+        throws RemoteException, InvalidTransactionException
+        {
+        	synchronized(openTransactions){
+        		if (openTransactions.containsKey(id) == false){ throw new InvalidTransactionException(id); }
+        	}
                 Trace.info("INFO: RM::newCustomer(" + id + ") called" );
                 // Generate a globally unique ID for the new customer
                 int cid = Integer.parseInt( String.valueOf(id) +
@@ -571,21 +538,19 @@ synchronized(openTransactions){
 		}
 
                 return cid;
-	}
-	else
-		throw new InvalidTransactionException(id);
-	}
-                        }
+	
+       }
 
 
 
 
         // I opted to pass in customerID instead. This makes testing easier
         public boolean newCustomer(int id, int customerID )
-                        throws RemoteException, InvalidTransactionException
-                        {
-synchronized(openTransactions){
-	if (openTransactions.containsKey(id)){
+        throws RemoteException, InvalidTransactionException
+        {
+        	synchronized(openTransactions){
+        		if (openTransactions.containsKey(id) == false){ throw new InvalidTransactionException(id); }
+        	}
                 Trace.info("INFO: RM::newCustomer(" + id + ", " + customerID + ") called" );
                 Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
                 if ( cust == null && tM.newCustomer(id,customerID)) {
@@ -605,23 +570,21 @@ synchronized(openTransactions){
                         Trace.info("INFO: RM::newCustomer(" + id + ", " + customerID + ") failed--customer already exists");
                         return false;
                 } // else
-	}
-	else
-		throw new InvalidTransactionException(id);
-}
-                        }
+
+        }
 
 
 
         // Deletes customer from the database.
         public boolean deleteCustomer(int id, int customerID)
-                        throws RemoteException, InvalidTransactionException
+        throws RemoteException, InvalidTransactionException
         {
-synchronized(openTransactions){
-	if (openTransactions.containsKey(id)){
+        	synchronized(openTransactions){
+        		if (openTransactions.containsKey(id) == false){ throw new InvalidTransactionException(id); }
+        	}
                 Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") called" );
-		if(tM.deleteCustomer(id,customerID))
-		{
+                if(tM.deleteCustomer(id,customerID))
+                {
                 	Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
                 	if ( cust == null ) {
                         	Trace.warn("RM::deleteCustomer(" + id + ", " + customerID + ") failed--customer doesn't exist" );
@@ -640,14 +603,11 @@ synchronized(openTransactions){
                         	Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") succeeded" );
                         	return true;
                 	} // if
-		}
+                }
 
-		else
-			return false;
-	}
-	else
-		throw new InvalidTransactionException(id);
-}
+                else
+                	return false;
+
          }
 
 
@@ -659,8 +619,8 @@ synchronized(openTransactions){
         // customer doesn't exist. Returns empty RMHashtable if customer exists but has no
         // reservations.
         public RMHashtable getCustomerReservations(int id, int customerID)
-                        throws RemoteException
-                        {
+        throws RemoteException
+        {
                 Trace.info("RM::getCustomerReservations(" + id + ", " + customerID + ") called" );
                 Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
                 if ( cust == null ) {
@@ -669,7 +629,7 @@ synchronized(openTransactions){
                 } else {
                         return cust.getReservations();
                 } // if
-                        }
+         }
 
 
 
@@ -679,11 +639,12 @@ synchronized(openTransactions){
         public String queryCustomerInfo(int id, int customerID)
                         throws RemoteException, InvalidTransactionException
         {
-synchronized(openTransactions){
-	if (openTransactions.containsKey(id)){
+        	synchronized(openTransactions){
+        		if (openTransactions.containsKey(id) == false){ throw new InvalidTransactionException(id); }
+        	}
                 Trace.info("RM::queryCustomerInfo(" + id + ", " + customerID + ") called" );
-		if(tM.queryCustomerInfo(id,customerID))
-		{
+                if(tM.queryCustomerInfo(id,customerID))
+                {
                 	Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
                 	if ( cust == null ) {
                         	Trace.warn("RM::queryCustomerInfo(" + id + ", " + customerID + ") failed--customer doesn't exist" );
@@ -694,13 +655,9 @@ synchronized(openTransactions){
                         	System.out.println( s );
                         	return s;
                 	} // if
-		}
-		else
-			return "";
-	}
-	else
-		throw new InvalidTransactionException(id);
-}
+                }
+                else
+                	return "";
         }
 
 

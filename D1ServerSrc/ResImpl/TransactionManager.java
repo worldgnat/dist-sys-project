@@ -20,12 +20,12 @@ public class TransactionManager {
         LockManager lm;
         Middleware mid = null;
         TreeMap<Integer, Long> tList = null; // List that keeps track of all transactions
-        TransactionKicker kicker = null;
+        //TransactionKicker kicker = null;
         public TransactionManager(Middleware creator){
                 lm = new LockManager();
                 tList = new TreeMap<Integer,Long>();
                 mid = creator;
-		kicker = new TransactionKicker(this);
+		//kicker = new TransactionKicker(this);
         }
         
         
@@ -574,6 +574,7 @@ public class TransactionManager {
 /*
 * Automatically abort transactions that have reached their timeout.
 */
+/*
 class TransactionKicker implements Runnable {
         private TreeMap<Integer, Long> transactions;
         private TransactionManager manager;
@@ -608,7 +609,7 @@ class NonExistantTransactionException extends Exception {
         public NonExistantTransactionException(int tid) {
                 super("Transaction " + tid + " is not a valid transaction. It may have been aborted due to timeout.");
         }
-}
+}*/
 
     
 
