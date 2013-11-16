@@ -83,13 +83,10 @@ public class TransactionManager {
 	public boolean addFlight(int id, int flightNum, int flightSeats, int flightPrice) throws RemoteException, InvalidTransactionException {
 		try{
 			synchronized (tList) {
-				if (tList.containsKey(id)){
-					if (lm.Lock(id,Flight.getKey(flightNum),LockManager.WRITE))
-					{ return true; }
-					else
-					{ return false; }
-				}
+				if (tList.containsKey(id) == false){ throw new InvalidTransactionException(id); }
 			}
+					return (lm.Lock(id,Flight.getKey(flightNum),LockManager.WRITE));
+					
 		}
 
 
@@ -99,8 +96,6 @@ public class TransactionManager {
 			abort(id);
 			return false;
 		}
-
-		return false;
 			
 	}
         public boolean reserveFlight(int id, int customerID, int flightNum)
@@ -108,7 +103,8 @@ public class TransactionManager {
         {
                 try {
                         synchronized (tList) {
-                                if (tList.containsKey(id)) {
+                                if (tList.containsKey(id) == false) {  throw new InvalidTransactionException(id); }
+                        }
                                         // Obtain locks for the customer and flight objects. If you have both
                                         // then you return true. YOU NEED WRITE LOCKS SINCE YOU CHANGE
                                         // THE NUMBER OF SEATS AND THE RESERVATIONS OF THE CUSTOMER.
@@ -122,22 +118,22 @@ public class TransactionManager {
                                                 return true;
                                         }
                                         else return false;
-                                }
-                        }
-                }
+              }
+                      
+                
                 catch (DeadlockException e) {
-                        System.out.println ("Deadlock at transation " + id + "when reserving flight" + flightNum);
-			abort(id);
-			return false;
+                    System.out.println ("Deadlock at transation " + id + "when reserving flight" + flightNum);
+                    abort(id);
+                    return false;
                 }
-                return false;
         }
         
         public boolean deleteFlight(int id, int flightNum) throws InvalidTransactionException, RemoteException
         {
                 try {
                         synchronized (tList) {
-                                if (tList.containsKey(id)) {
+                                if (tList.containsKey(id) == false) {  throw new InvalidTransactionException(id); }
+                        }
                                         // Obtain a WRITE lock since you are deleting the flight
                                         boolean flightBool = false;
                                         flightBool = lm.Lock (id, Flight.getKey(flightNum), LockManager.WRITE);
@@ -145,22 +141,23 @@ public class TransactionManager {
                                         { return true; } //mid.deleteFlight(id,flightNum); }
                                         else
                                         { return false; }
-                                }
-                        }
                 }
+                        
+               
          catch (DeadlockException e) {
-         System.out.println ("Deadlock at transation " + id + "when reserving flight " + flightNum);
-		abort(id);
-         return false;
-         }
-                return false;
+        	 System.out.println ("Deadlock at transation " + id + "when reserving flight " + flightNum);
+        	 abort(id);
+        	 return false;
+         	}
+
         }
         
         public boolean queryFlight(int id, int flightNum) throws InvalidTransactionException, RemoteException
         {
                 try {
                         synchronized (tList) {
-                                if (tList.containsKey(id)) {
+                                if (tList.containsKey(id) == false) {  throw new InvalidTransactionException(id); }
+                        }
                                         // We only need a READ lock for the flight
                                         boolean flightBool = false;
                                         flightBool = lm.Lock (id, Flight.getKey(flightNum), LockManager.READ);
@@ -168,22 +165,23 @@ public class TransactionManager {
                                         { return true; } //mid.queryFlight(id,flightNum); }
                                         else
                                         { return false; }
-                         }
-                        }
+                       
                 }
+                
          catch (DeadlockException e) {
-         System.out.println ("Deadlock at transation " + id + "when fetching flight " + flightNum);
-	 abort(id);
-         return false;
+        	 System.out.println ("Deadlock at transation " + id + "when fetching flight " + flightNum);
+        	 abort(id);
+        	 return false;
          }
-                return false;
+
         }
         
         public boolean queryFlightPrice(int id, int flightNum) throws InvalidTransactionException, RemoteException 
         {
                 try {
                         synchronized (tList) {
-                                if (tList.containsKey(id)) {
+                                if (tList.containsKey(id) == false) {  throw new InvalidTransactionException(id); }
+                        }
                                         // We only need a READ lock since we wish to know the price
                                         boolean flightBool = false;
                                         flightBool = lm.Lock (id, Flight.getKey(flightNum), LockManager.READ);
@@ -191,15 +189,14 @@ public class TransactionManager {
                                         { return true; } //mid.queryFlightPrice(id,flightNum); }
                                         else
                                         { return false; }
-                                }
-                        }
+                    
          }
          catch (DeadlockException e) {
-         System.out.println ("Deadlock at transaction " + id + "when fetching flight price " + flightNum);
-	 abort(id);
-         return false;
+        	 System.out.println ("Deadlock at transaction " + id + "when fetching flight price " + flightNum);
+        	 abort(id);
+        	 return false;
          }
-                return false;
+
         }
         
         /*********************************
@@ -209,13 +206,14 @@ public class TransactionManager {
 	public boolean addCars(int id, String location, int count, int price) throws InvalidTransactionException, RemoteException {
 		try {
 			synchronized(tList){
-				if (tList.containsKey(id)){
+				if (tList.containsKey(id) == false){  throw new InvalidTransactionException(id); }
+			}
 					if (lm.Lock(id,Car.getKey(location),LockManager.WRITE))
 					{ return true; }
 					else
 					{ return false; }
-				}
-			}
+		
+			
 		}
 
 
@@ -224,8 +222,6 @@ public class TransactionManager {
 			abort(id); 
 			return false; 
 		}
-	
-		return false;
 		
 
 	}
@@ -234,7 +230,8 @@ public class TransactionManager {
         {
                 try {
                         synchronized (tList) {
-                                if (tList.containsKey(id)) {
+                                if (tList.containsKey(id) == false) {  throw new InvalidTransactionException(id); }
+                        }
                                         // Obtain a WRITE lock on the car and customer objects because you need
                                         // to change the reservations and number of cars values
                                         boolean carBool = false;
@@ -245,22 +242,22 @@ public class TransactionManager {
                                         { return true; } //mid.reserveCar(id,customerID,location); }
                                         else
                                         { return false; }
-                                }
-                        }
+                        
          }
          catch (DeadlockException e) {
-         System.out.println ("Deadlock at transaction " + id + "when reserving car " + location);
-	 abort(id);
-         return false;
+        	 System.out.println ("Deadlock at transaction " + id + "when reserving car " + location);
+        	 abort(id);
+        	 return false;
          }
-                return false;
+      
         }
         
         public boolean deleteCars(int id, String location) throws InvalidTransactionException, RemoteException 
         {
                 try {
                         synchronized (tList) {
-                                if (tList.containsKey(id)) {
+                                if (tList.containsKey(id) == false) {  throw new InvalidTransactionException(id); }
+                        }
                                         // Only need a WRITE lock on the car object. If the customer still
                                         // exists, then the middleware will reject the query anyways. Therefore
                                         // we don't need to worry about the customers who reserved the cars.
@@ -270,22 +267,22 @@ public class TransactionManager {
                                         { return true; } //mid.deleteCars(id,location); }
                                         else
                                         { return false; }
-                                }
-                        }
+                        
          }
          catch (DeadlockException e) {
-         System.out.println ("Deadlock at transction "+id+" when deleting car "+location);
-	 abort(id);
-         return false;
+        	 System.out.println ("Deadlock at transction "+id+" when deleting car "+location);
+        	 abort(id);
+        	 return false;
          }
-                return false;
+
         }
         
         public boolean queryCars(int id, String location) throws InvalidTransactionException, RemoteException 
         {
                 try {
                         synchronized (tList) {
-                                if (tList.containsKey(id)) {
+                                if (tList.containsKey(id) == false) {  throw new InvalidTransactionException(id); }
+                        }
                                         // Only need a READ lock
                                         boolean carBool = false;
                                         carBool = lm.Lock (id, Car.getKey(location), LockManager.READ);
@@ -293,22 +290,22 @@ public class TransactionManager {
                                         { return true; }//mid.queryCars(id,location); }
                                         else
                                         { return false; }
-                                }
-                        }
+                      
          }
          catch (DeadlockException e) {
-         System.out.println ("Deadlock at transaction " + id + " when detching car " + location);
-	 abort(id);
-         return false;
+        	 System.out.println ("Deadlock at transaction " + id + " when detching car " + location);
+        	 abort(id);
+        	 return false;
          }
-                return false;
+               
         }
         
         public boolean queryCarsPrice(int id, String location) throws InvalidTransactionException, RemoteException 
         {
                 try {
                         synchronized (tList) {
-                                if (tList.containsKey(id)) {
+                                if (tList.containsKey(id) == false) {  throw new InvalidTransactionException(id); }
+                        }
                                         // Only need a READ lock
                                         boolean carBool = false;
                                         carBool = lm.Lock (id, Car.getKey(location), LockManager.READ);
@@ -316,15 +313,14 @@ public class TransactionManager {
                                                 { return true;} //mid.queryCarsPrice(id,location); }
                                         else
                                         { return false; }
-                                }
-                        }
+                                
          }
          catch (DeadlockException e) {
-         System.out.println ("Deadlock at transaction " + id + " when fetching car price " + location);
-	 abort(id);
-         return false;
+        	 System.out.println ("Deadlock at transaction " + id + " when fetching car price " + location);
+        	 abort(id);
+        	 return false;
          }
-                return false;
+               
         }
         
         
@@ -335,13 +331,13 @@ public class TransactionManager {
         public boolean addRooms(int id, String location, int count, int price) throws InvalidTransactionException, RemoteException {
 		try{
 			synchronized (tList){
-				if (tList.containsKey(id)){
+				if (tList.containsKey(id) == false ){  throw new InvalidTransactionException(id); }
+			}
 					if (lm.Lock(id,Hotel.getKey(location), LockManager.WRITE))
 					{ return true; }
 					else
 					{ return false; }
-				}
-			}
+			
 
 		}
 
@@ -352,8 +348,6 @@ public class TransactionManager {
 			return false; 
 		}
 		
-		return false;
-
 	}
 
 
@@ -361,7 +355,8 @@ public class TransactionManager {
         {
                 try {
                         synchronized (tList) {
-                                if (tList.containsKey(id)) {
+                                if (tList.containsKey(id) == false) {  throw new InvalidTransactionException(id); }
+                        }
                                         // We need an exclusive lock on both customer and room
                                         boolean cusBool = false;
                                         boolean roomBool = false;
@@ -371,22 +366,22 @@ public class TransactionManager {
                                                 { return true; }//mid.reserveRoom(id,customerID,location); }
                                         else
                                         { return false; }
-                                }
-                        }
+                         
          }
          catch (DeadlockException e) {
-         System.out.println ("Deadlock at transaction " + id + " when reserving room " + location);
-        abort(id); 
-	return false;
+        	 System.out.println ("Deadlock at transaction " + id + " when reserving room " + location);
+        	 abort(id); 
+        	 return false;
          }
-                return false;
+              
         }
         
         public boolean deleteRooms(int id, String location) throws InvalidTransactionException, RemoteException 
         {
                 try {
                         synchronized (tList) {
-                                if (tList.containsKey(id)) {
+                                if (tList.containsKey(id) == false) {  throw new InvalidTransactionException(id); }
+                        }
                                         // Need an exclusive lock on the room
                                         boolean roomBool = false;
                                         roomBool = lm.Lock (id,Hotel.getKey(location), LockManager.WRITE);
@@ -394,22 +389,22 @@ public class TransactionManager {
                                                 { return true;}//mid.deleteRooms(id,location); }
                                         else
                                                 { return false; }
-                                }
-                        }
+                         
          }
          catch (DeadlockException e) {
-         System.out.println ("Deadlock at transaction " + id + " when deleting rooms " + location);
-        abort(id); 
-	return false;
+        	 System.out.println ("Deadlock at transaction " + id + " when deleting rooms " + location);
+        	 abort(id); 
+        	 return false;
          }
-                return false;
+                
         }
         
         public boolean queryRooms(int id, String location) throws InvalidTransactionException, RemoteException 
         {
                 try {
                         synchronized (tList) {
-                                if (tList.containsKey(id)) {
+                                if (tList.containsKey(id) == false) {  throw new InvalidTransactionException(id); }
+                        }
                                         // Need a shared lock on the room
                                         boolean roomBool = false;
                                         roomBool = lm.Lock (id,Hotel.getKey(location), LockManager.READ);
@@ -417,22 +412,22 @@ public class TransactionManager {
                                                 { return true; }//mid.queryRooms(id,location); }
                                         else
                                                 { return false; }
-                                }
-                        }
+                             
          }
          catch (DeadlockException e) {
-         System.out.println ("Deadlock at transaction " + id + " when fetching rooms " + location);
-        abort(id); 
-	return false;
+        	 System.out.println ("Deadlock at transaction " + id + " when fetching rooms " + location);
+        	 abort(id); 
+        	 return false;
          }
-                return false;
+               
         }
         
         public boolean queryRoomsPrice(int id, String location) throws InvalidTransactionException, RemoteException 
         {
                 try {
                         synchronized (tList) {
-                                if (tList.containsKey(id)) {
+                                if (tList.containsKey(id) == false) {  throw new InvalidTransactionException(id); }
+                        }
                                         // Only need a shared lock on the room
                                         boolean roomBool = false;
                                         roomBool = lm.Lock (id,Hotel.getKey(location), LockManager.READ);
@@ -440,15 +435,14 @@ public class TransactionManager {
                                         { return true; } //mid.queryRoomsPrice(id,location); }
                                         else
                                         { return false; }
-                                }
-                        }
+                         
          }
          catch (DeadlockException e) {
-         System.out.println ("Deadlock at transaction " + id + "when fetching rooms price " + location);
-         abort(id);
-	 return false;
+        	 System.out.println ("Deadlock at transaction " + id + "when fetching rooms price " + location);
+        	 abort(id);
+        	 return false;
          }
-                return false;
+                
         }
         
         
@@ -459,25 +453,25 @@ public class TransactionManager {
 	public boolean newCustomer(int id, int cid) throws InvalidTransactionException, RemoteException {
 		try {
 			synchronized (tList) {
-				if (tList.containsKey(id)){
+				if (tList.containsKey(id) == false){  throw new InvalidTransactionException(id); }
+			}
 					if (lm.Lock(id,Customer.getKey(cid),LockManager.WRITE))
 					{ return true; }
 					else
 					{ return false; }
-				}
-			}
 		}
 
 
 		catch (DeadlockException e)
 		{ System.out.println("Deadlock at transaction " + id + "when adding customer " + cid); abort(id); return false; }
-		return false;
+		
 	}
         public boolean deleteCustomer(int id, int customerID) throws RemoteException, InvalidTransactionException 
         {
                 try{
                         synchronized (tList) {
-                                if (tList.containsKey(id)) {
+                                if (tList.containsKey(id) == false) {  throw new InvalidTransactionException(id); }
+                        }
                                         // In here, we need exclusive locks on the customer as well
                                         // any flights, cars, rooms that he/she has reserved.
                                         boolean cusBool = false;
@@ -502,43 +496,43 @@ public class TransactionManager {
                                         
                                         else
                                         { return false; }
-                                }
-                        }
+                            
                 }
                 catch (DeadlockException e) {
-         System.out.println ("Deadlock at transaction " + id + "when deleting customer " + customerID);
-	 abort(id);
-         return false;
+                	System.out.println ("Deadlock at transaction " + id + "when deleting customer " + customerID);
+                	abort(id);
+                	return false;
          }
-                return false;
+             
         }
         
         public boolean queryCustomerInfo(int id, int customerID) throws InvalidTransactionException, RemoteException 
         {
                 try{
                         synchronized (tList) {
-                                if (tList.containsKey(id)) {
+                                if (tList.containsKey(id) == false) {  throw new InvalidTransactionException(id); }
+                        }
                                         // Only need a shared lock on the customer
                                         boolean cusBool = false;
                                         cusBool = lm.Lock(id, Customer.getKey(customerID), LockManager.READ);
                                         
                                         return cusBool;
-                                }
-                        }
+                        
                 }
                 catch (DeadlockException e) {
-         System.out.println ("Deadlock at transaction " + id + "when querying customer " + customerID);
-        abort(id); 
-	return false;
-         }
-                return false;
+                	System.out.println ("Deadlock at transaction " + id + "when querying customer " + customerID);
+                	abort(id); 
+                	return false;
+                }
+              
         }
         
         public boolean itinerary(int id,int customer,Vector flightNumbers,String location,boolean car,boolean room) throws InvalidTransactionException, RemoteException 
         {
                 try{
                         synchronized (tList) {
-                                if (tList.containsKey(id)) {
+                                if (tList.containsKey(id) == false) {  throw new InvalidTransactionException(id); }
+                        }
                                         // We need exclusive locks on the customer, hotel, car AND every flight in the vector
                                         boolean cusBool = false;
                                         boolean roomBool = false;
@@ -559,17 +553,16 @@ public class TransactionManager {
                                          flightBool = lm.Lock (id, Flight.getKey(flightNum), LockManager.WRITE);
                                  }
                                  return (cusBool && carBool && roomBool && flightBool);
-                                }
-                        }
+                        
                 }
                 catch (DeadlockException e) {
-         System.out.println ("Deadlock at transaction " + id + "when making an itinerary");
-         abort(id);
-	 return false;
-         }
-                return false;
+                	System.out.println ("Deadlock at transaction " + id + "when making an itinerary");
+                	abort(id);
+                	return false;
+                }
+                
         }
-}
+}// end class
 
 /*
 * Automatically abort transactions that have reached their timeout.
