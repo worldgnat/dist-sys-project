@@ -8,6 +8,8 @@ import java.util.concurrent.LinkedBlockingQueue;
  * so that the changes can be updated in the main RMHashtable later.
  */
 public class TemporaryHT extends RMHashtable{
+	
+	public static RMItem NOITEM = new RMInteger(-1);
 	LinkedBlockingQueue<Object[]> changeQueue;
 	public TemporaryHT() {
 		super();
@@ -23,7 +25,7 @@ public class TemporaryHT extends RMHashtable{
 	public synchronized Object remove(Object key) {
 		if (super.contains(key)) {
 			Object ret = super.get(key);
-			super.put(key, null);
+			super.put(key, NOITEM);
 			return ret;
 		}
 		else {

@@ -76,6 +76,10 @@ public class ResourceManagerImpl implements ResourceManager
 		 */
 		synchronized(openTransactions) {
 			if (openTransactions.get(id).containsKey(key)) {
+				RMItem temp = (RMItem)openTransactions.get(id).get(key);
+				if (temp == TemporaryHT.NOITEM) { //The item has been removed.
+					return null;
+				}
 				return (RMItem)openTransactions.get(id).get(key);
 			}
 		}
@@ -155,6 +159,7 @@ public class ResourceManagerImpl implements ResourceManager
 			synchronized(openTransactions) {
 				RMItem temp = (RMItem)openTransactions.get(id).remove(key);
 				if (temp == null) { //The value was not stored in the temporary hashtable, but in m_itemHT
+					Trace.info("RM::item was not in the temporary hashtable.");
 					return (RMItem)m_itemHT.get(key);
 				}
 				else return temp;
