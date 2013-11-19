@@ -16,10 +16,11 @@ public class TemporaryHT extends RMHashtable{
 		changeQueue = new LinkedBlockingQueue<Object[]>();
 	}
 	
-	public synchronized Object put(Object key, Object value) {
-		Object[] changes = {key, value};
+	public synchronized Object put(Object key, RMItem value) {
+		RMItem clone = value.clone();
+		Object[] changes = {key, clone};
 		changeQueue.add(changes);
-		return super.put(key, value);
+		return super.put(key, clone);
 	}
 	
 	public synchronized Object remove(Object key) {

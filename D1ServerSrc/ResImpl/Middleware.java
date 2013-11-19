@@ -726,7 +726,7 @@ return true;
 	// reserve an item
 	protected synchronized boolean reserveItem(int id, int customerID, String key, String location, int price) {
 		Trace.info("Middleware::reserveItem( " + id + ", customer=" + customerID + ", " +key+ ", "+location+" ) called" );
-		Customer cust = (Customer)readData(id, Customer.getKey(customerID));
+		Customer cust = (Customer)readData(id, Customer.getKey(customerID)).clone();
 		cust.reserve(key, location, price);
 		writeData(id, cust.getKey(), cust);
 		Trace.info("Middleware::reserveItem( " + id + ", " + customerID + ", " + key + ", " +location+") succeeded" );
