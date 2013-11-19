@@ -737,7 +737,7 @@ return true;
 			return false;
 		} else {
 			cust.reserve(key, location, item.getPrice());
-			writeData(id, key, cust);
+			writeData(id, cust.getKey(), cust);
 
 			// decrease the number of available items in the storage
 			item.setCount(item.getCount() - 1);
