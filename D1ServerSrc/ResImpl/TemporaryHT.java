@@ -22,7 +22,9 @@ public class TemporaryHT extends RMHashtable{
 	
 	public synchronized Object remove(Object key) {
 		if (super.contains(key)) {
-			return super.remove(key);
+			Object ret = super.get(key);
+			super.put(key, null);
+			return ret;
 		}
 		else {
 			Object[] values = {key, null};
