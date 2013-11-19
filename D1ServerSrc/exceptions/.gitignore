@@ -1,3 +1,6 @@
 /InvalidTransactionException.class
 /TransactionAbortedException.class
+<<<<<<< HEAD
 /.gitignore
+=======
+>>>>>>> 33e8fd648bfee27f5e386fbba955a89eefb10af8
