@@ -212,7 +212,7 @@ public class Middleware implements MiddlewareInt{
 	}
 	public void abort(int tid) throws RemoteException, InvalidTransactionException{
 		tM.abort(tid);
-		tmAbort(tid);
+		//tmAbort(tid);
 	}
 
 	public void tmAbort (int tid) throws RemoteException, InvalidTransactionException{
