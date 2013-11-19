@@ -218,7 +218,7 @@ public class ResourceManagerImpl implements ResourceManager
 	// reserve an item
 	protected synchronized boolean reserveItem(int id, int customerID, String key, String location) {
 		Trace.info("RM::reserveItem( " + id + ", customer=" + customerID + ", " +key+ ", "+location+" ) called" );
-		Customer cust = (Customer)readData(id, key);
+		Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
 		// check if the item is available
 		ReservableItem item = (ReservableItem)readData(id, key);
 		if ( item == null ) {
