@@ -30,6 +30,7 @@ public class TemporaryHT extends RMHashtable{
 		}
 		else {
 			Object[] values = {key, null};
+			super.put(key, NOITEM);
 			try {
 				changeQueue.put(values);
 			} catch (InterruptedException e) {
