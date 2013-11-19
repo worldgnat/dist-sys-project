@@ -308,7 +308,7 @@ public class Middleware implements MiddlewareInt{
 			boolean result = rmFlights.reserveFlight(id,customerID,flightNum);
 			if (result)
 			{
-				reserveItem(id, customerID, Flight.getKey(flightNum), String.valueOf(flightNum));
+				reserveItem(id, customerID, Flight.getKey(flightNum), String.valueOf(flightNum), queryFlightPrice(id,flightNum));
 				return result;
 			}
 			else {return result; }
@@ -324,13 +324,13 @@ public class Middleware implements MiddlewareInt{
 public boolean freeFlightReservation(int id, int flightNum)
 throws RemoteException
 {
-Trace.info("RM::freeFlightReservations(" + id + ", " + flightNum + ") called" );
+Trace.info("Middleware::freeFlightReservations(" + id + ", " + flightNum + ") called" );
 RMInteger numReservations = (RMInteger) readData( id, Flight.getNumReservationsKey(flightNum) );
 if ( numReservations != null ) {
 numReservations = new RMInteger( Math.max( 0, numReservations.getValue()-1) );
 } // if
 writeData(id, Flight.getNumReservationsKey(flightNum), numReservations );
-Trace.info("RM::freeFlightReservations(" + id + ", " + flightNum + ") succeeded, this flight now has "
+Trace.info("Middleware::freeFlightReservations(" + id + ", " + flightNum + ") succeeded, this flight now has "
 + numReservations + " reservations" );
 return true;
 }
@@ -342,12 +342,12 @@ return true;
 	// public int queryFlightReservations(int id, int flightNum)
 	// throws RemoteException
 	// {
-	// Trace.info("RM::queryFlightReservations(" + id + ", #" + flightNum + ") called" );
+	// Trace.info("Middleware::queryFlightReservations(" + id + ", #" + flightNum + ") called" );
 	// RMInteger numReservations = (RMInteger) readData( id, Flight.getNumReservationsKey(flightNum) );
 	// if ( numReservations == null ) {
 	// numReservations = new RMInteger(0);
 	// } // if
-	// Trace.info("RM::queryFlightReservations(" + id + ", #" + flightNum + ") returns " + numReservations );
+	// Trace.info("Middleware::queryFlightReservations(" + id + ", #" + flightNum + ") returns " + numReservations );
 	// return numReservations.getValue();
 	// }
 
@@ -438,7 +438,7 @@ return true;
 						boolean result = rmCars.reserveCar(id,customerID,location);
 						if (result)
 						{
-							reserveItem(id, customerID, Car.getKey(location), location);
+							reserveItem(id, customerID, Car.getKey(location), location, queryCarsPrice(id, location));
 							return result;
 						}
 						else { return result; }
@@ -530,7 +530,7 @@ return true;
 			boolean result = rmRooms.reserveRoom(id,customerID,location);
 			if (result)
 			{
-				reserveItem(id, customerID, Hotel.getKey(location), location);
+				reserveItem(id, customerID, Hotel.getKey(location), location, queryRoomsPrice(id, location));
 				return result;
 			}
 			else
@@ -552,7 +552,7 @@ return true;
 		synchronized(openTransactions){
 			if (openTransactions.containsKey(id) == false){ throw new InvalidTransactionException(id); }
 		}
-		Trace.info("INFO: RM::newCustomer(" + id + ") called" );
+		Trace.info("INFO: Middleware::newCustomer(" + id + ") called" );
 		// Generate a globally unique ID for the new customer
 		int cid = Integer.parseInt( String.valueOf(id) +
 				String.valueOf(Calendar.getInstance().get(Calendar.MILLISECOND)) +
@@ -561,7 +561,7 @@ return true;
 		{
 			Customer cust = new Customer( cid );
 			writeData( id, cust.getKey(), cust );
-			Trace.info("RM::newCustomer(" + cid + ") returns ID=" + cid );
+			Trace.info("Middleware::newCustomer(" + cid + ") returns ID=" + cid );
 
 			return cid;
 		}
@@ -579,12 +579,12 @@ return true;
 		synchronized(openTransactions){
 			if (openTransactions.containsKey(id) == false){ throw new InvalidTransactionException(id); }
 		}
-		Trace.info("INFO: RM::newCustomer(" + id + ", " + customerID + ") called" );
+		Trace.info("INFO: Middleware::newCustomer(" + id + ", " + customerID + ") called" );
 		Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
 		if ( cust == null && tM.newCustomer(id,customerID)) {
 			cust = new Customer(customerID);
 			writeData( id, cust.getKey(), cust );
-			Trace.info("INFO: RM::newCustomer(" + id + ", " + customerID + ") created a new customer" );
+			Trace.info("INFO: Middleware::newCustomer(" + id + ", " + customerID + ") created a new customer" );
 
 			/***************************************/
 			// Make the other RMs add a new customer
@@ -595,7 +595,7 @@ return true;
 
 			return true;
 		} else {
-			Trace.info("INFO: RM::newCustomer(" + id + ", " + customerID + ") failed--customer already exists");
+			Trace.info("INFO: Middleware::newCustomer(" + id + ", " + customerID + ") failed--customer already exists");
 			return false;
 		} // else
 
@@ -610,15 +610,15 @@ return true;
 		synchronized(openTransactions){
 			if (openTransactions.containsKey(id) == false){ throw new InvalidTransactionException(id); }
 		}
-		Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") called" );
+		Trace.info("Middleware::deleteCustomer(" + id + ", " + customerID + ") called" );
 		if(tM.deleteCustomer(id,customerID))
 		{
 			Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
 			if ( cust == null ) {
-				Trace.warn("RM::deleteCustomer(" + id + ", " + customerID + ") failed--customer doesn't exist" );
+				Trace.warn("Middleware::deleteCustomer(" + id + ", " + customerID + ") failed--customer doesn't exist" );
 				return false;
 			} else {
-				Trace.info("RM::deleteCustomer(" + id + ", " + customerID + ") succeeded" );
+				Trace.info("Middleware::deleteCustomer(" + id + ", " + customerID + ") succeeded" );
 				return true;
 			} // if
 		}
@@ -633,10 +633,10 @@ return true;
 	public RMHashtable getCustomerReservations(int id, int customerID)
 			throws RemoteException
 			{
-		Trace.info("RM::getCustomerReservations(" + id + ", " + customerID + ") called" );
+		Trace.info("Middleware::getCustomerReservations(" + id + ", " + customerID + ") called" );
 		Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
 		if ( cust == null ) {
-			Trace.warn("RM::getCustomerReservations failed(" + id + ", " + customerID + ") failed--customer doesn't exist" );
+			Trace.warn("Middleware::getCustomerReservations failed(" + id + ", " + customerID + ") failed--customer doesn't exist" );
 			return null;
 		} else {
 			return cust.getReservations();
@@ -650,16 +650,16 @@ return true;
 		synchronized(openTransactions){
 			if (openTransactions.containsKey(id) == false){ throw new InvalidTransactionException(id); }
 		}
-		Trace.info("RM::queryCustomerInfo(" + id + ", " + customerID + ") called" );
+		Trace.info("Middleware::queryCustomerInfo(" + id + ", " + customerID + ") called" );
 		if(tM.queryCustomerInfo(id,customerID))
 		{
 			Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
 			if ( cust == null ) {
-				Trace.warn("RM::queryCustomerInfo(" + id + ", " + customerID + ") failed--customer doesn't exist" );
+				Trace.warn("Middleware::queryCustomerInfo(" + id + ", " + customerID + ") failed--customer doesn't exist" );
 				return ""; // NOTE: don't change this--WC counts on this value indicating a customer does not exist...
 			} else {
 				String s = cust.printBill();
-				Trace.info("RM::queryCustomerInfo(" + id + ", " + customerID + "), bill follows..." );
+				Trace.info("Middleware::queryCustomerInfo(" + id + ", " + customerID + "), bill follows..." );
 				System.out.println( s );
 				return s;
 			} // if
@@ -677,20 +677,20 @@ return true;
 	// deletes the entire item
 	protected synchronized boolean deleteItem(int id, String key)
 	{
-		Trace.info("RM::deleteItem(" + id + ", " + key + ") called" );
+		Trace.info("Middleware::deleteItem(" + id + ", " + key + ") called" );
 		ReservableItem curObj = (ReservableItem) readData( id, key );
 		// Check if there is such an item in the storage
 		if( curObj == null ) {
-			Trace.warn("RM::deleteItem(" + id + ", " + key + ") failed--item doesn't exist" );
+			Trace.warn("Middleware::deleteItem(" + id + ", " + key + ") failed--item doesn't exist" );
 			return false;
 		} else {
 			if(curObj.getReserved()==0){
 				removeData(id, curObj.getKey());
-				Trace.info("RM::deleteItem(" + id + ", " + key + ") item deleted" );
+				Trace.info("Middleware::deleteItem(" + id + ", " + key + ") item deleted" );
 				return true;
 			}
 			else{
-				Trace.info("RM::deleteItem(" + id + ", " + key + ") item can't be deleted because some customers reserved it" );
+				Trace.info("Middleware::deleteItem(" + id + ", " + key + ") item can't be deleted because some customers reserved it" );
 				return false;
 			}
 		} // if
@@ -699,53 +699,38 @@ return true;
 
 	// query the number of available seats/rooms/cars
 	protected int queryNum(int id, String key) {
-		Trace.info("RM::queryNum(" + id + ", " + key + ") called" );
+		Trace.info("Middleware::queryNum(" + id + ", " + key + ") called" );
 		ReservableItem curObj = (ReservableItem) readData( id, key);
 		int value = 0;
 		if( curObj != null ) {
 			value = curObj.getCount();
 		} // else
-		Trace.info("RM::queryNum(" + id + ", " + key + ") returns count=" + value);
+		Trace.info("Middleware::queryNum(" + id + ", " + key + ") returns count=" + value);
 		return value;
 	}        
 
 	// query the price of an item
 	protected int queryPrice(int id, String key){
-		Trace.info("RM::queryCarsPrice(" + id + ", " + key + ") called" );
+		Trace.info("Middleware::queryCarsPrice(" + id + ", " + key + ") called" );
 		ReservableItem curObj = (ReservableItem) readData( id, key);
 		int value = 0;
 		if( curObj != null ) {
 			value = curObj.getPrice();
 		} // else
-		Trace.info("RM::queryCarsPrice(" + id + ", " + key + ") returns cost=$" + value );
+		Trace.info("Middleware::queryCarsPrice(" + id + ", " + key + ") returns cost=$" + value );
 		return value;                
 	}
 
 
 
 	// reserve an item
-	protected synchronized boolean reserveItem(int id, int customerID, String key, String location) {
-		Trace.info("RM::reserveItem( " + id + ", customer=" + customerID + ", " +key+ ", "+location+" ) called" );
+	protected synchronized boolean reserveItem(int id, int customerID, String key, String location, int price) {
+		Trace.info("Middleware::reserveItem( " + id + ", customer=" + customerID + ", " +key+ ", "+location+" ) called" );
 		Customer cust = (Customer)readData(id, key);
-		// check if the item is available
-		ReservableItem item = (ReservableItem)readData(id, key);
-		if ( item == null ) {
-			Trace.warn("RM::reserveItem( " + id + ", " + customerID + ", " + key+", " +location+") failed--item doesn't exist" );
-			return false;
-		} else if (item.getCount()==0) {
-			Trace.warn("RM::reserveItem( " + id + ", " + customerID + ", " + key+", " + location+") failed--No more items" );
-			return false;
-		} else {
-			cust.reserve(key, location, item.getPrice());
-			writeData(id, cust.getKey(), cust);
-
-			// decrease the number of available items in the storage
-			item.setCount(item.getCount() - 1);
-			item.setReserved(item.getReserved()+1);
-
-			Trace.info("RM::reserveItem( " + id + ", " + customerID + ", " + key + ", " +location+") succeeded" );
-			return true;
-		}
+		cust.reserve(key, location, price);
+		writeData(id, cust.getKey(), cust);
+		Trace.info("Middleware::reserveItem( " + id + ", " + customerID + ", " + key + ", " +location+") succeeded" );
+		return true;
 	}
 
 
