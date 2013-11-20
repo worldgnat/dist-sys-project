@@ -523,7 +523,7 @@ return true;
 			throws RemoteException, InvalidTransactionException
 			{
 		synchronized(openTransactions){
-			if (openTransactions.containsKey(id)){ throw new InvalidTransactionException(id); }
+			if (openTransactions.containsKey(id)==false){ throw new InvalidTransactionException(id); }
 		}
 		if (tM.reserveRoom(id,customerID,location))
 		{
