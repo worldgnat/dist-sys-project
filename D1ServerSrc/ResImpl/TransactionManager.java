@@ -55,6 +55,7 @@ public class TransactionManager {
                                 throw new InvalidTransactionException(tid);
                         }
                         else {
+				System.out.println("TM: committing transaction " + tid);
                                 tList.remove(tid);
                                 lm.UnlockAll(tid);
                         }
@@ -66,7 +67,8 @@ public class TransactionManager {
         {
                 synchronized(tList) {
                 	if (tList.containsKey(tid)) {
-                		lm.UnlockAll(tid);
+			System.out.println("TM: aborting transaction " + tid);	
+                	lm.UnlockAll(tid);
                         tList.remove(tid);
                         mid.tmAbort(tid);
                 	}

@@ -212,7 +212,7 @@ public class Middleware implements MiddlewareInt{
 	}
 	public void abort(int tid) throws RemoteException, InvalidTransactionException{
 		tM.abort(tid);
-		tmAbort(tid);
+		//tmAbort(tid);
 	}
 
 	public void tmAbort (int tid) throws RemoteException, InvalidTransactionException{
@@ -523,7 +523,7 @@ return true;
 			throws RemoteException, InvalidTransactionException
 			{
 		synchronized(openTransactions){
-			if (openTransactions.containsKey(id)){ throw new InvalidTransactionException(id); }
+			if (openTransactions.containsKey(id)==false){ throw new InvalidTransactionException(id); }
 		}
 		if (tM.reserveRoom(id,customerID,location))
 		{
