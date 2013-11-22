@@ -222,7 +222,7 @@ public class ResourceManagerImpl implements ResourceManager
 		Trace.info("RM::customer temporary hash:" + cust.hashCode());
 		Trace.info("RM::customer permanent hash: " + ((Customer)readData(id, Customer.getKey(customerID))).hashCode());
 		// check if the item is available
-		ReservableItem item = (ReservableItem)readData(id, key);
+		ReservableItem item = (ReservableItem)readData(id, key).clone();
 		if ( item == null ) {
 			Trace.warn("RM::reserveItem( " + id + ", " + customerID + ", " + key+", " +location+") failed--item doesn't exist" );
 			return false;
@@ -236,6 +236,7 @@ public class ResourceManagerImpl implements ResourceManager
 			// decrease the number of available items in the storage
 			item.setCount(item.getCount() - 1);
 			item.setReserved(item.getReserved()+1);
+			writeData(id,item.getKey(),item);
 
 			Trace.info("RM::reserveItem( " + id + ", " + customerID + ", " + key + ", " +location+") succeeded" );
 			return true;
