@@ -15,12 +15,14 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.RMISecurityManager;
 import exceptions.*;
+import groupComm.*;
 
-public class ResourceManagerImpl implements ResourceManager
+public class ResourceManagerImpl implements ResourceManager, MiddleResourceManageInt
 {
 
 	protected RMHashtable m_itemHT = new RMHashtable();
 	protected TreeMap<Integer, TemporaryHT> openTransactions = new TreeMap<Integer, TemporaryHT>();
+	GroupManagement gm;
 
 
 	public static void main(String args[]) {
@@ -49,6 +51,9 @@ public class ResourceManagerImpl implements ResourceManager
 			// Bind the remote object's stub in the registry
 			Registry registry = LocateRegistry.getRegistry(port);
 			registry.rebind(binding, rm);
+			
+			//Set up group management layer
+			obj.setGM(new GroupManagement(obj, binding));
 
 			System.err.println("Server ready");
 		} catch (Exception e) {
@@ -63,6 +68,10 @@ public class ResourceManagerImpl implements ResourceManager
 	}
 
 	public ResourceManagerImpl() throws RemoteException {
+	}
+	
+	public void setGM(GroupManagement gm) {
+		this.gm = gm;
 	}
 
 	public boolean shutdown(){
@@ -89,7 +98,7 @@ public class ResourceManagerImpl implements ResourceManager
 	}
 
 	// Writes a data item
-	protected void writeData(int id, String key, RMItem value)
+	public void writeData(int id, String key, RMItem value)
 	{
 		synchronized(openTransactions) {
 			// m_itemHT.put(key, value);
@@ -102,6 +111,8 @@ public class ResourceManagerImpl implements ResourceManager
 				openTransactions.get(id).put(key, value);
 			}
 		}
+		//Write the changes to the backups.
+		gm.sendUpdates(new HashtableUpdate(id, key, value));
 	}
 
 	public void start(int tid) throws RemoteException{
@@ -112,6 +123,8 @@ public class ResourceManagerImpl implements ResourceManager
 				System.out.println("Started transaction " + tid);
 			}
 		}
+		//Start the transaction on the backups.
+		gm.sendUpdates(new StartMessage(tid));
 	}
 
 
@@ -140,6 +153,8 @@ public class ResourceManagerImpl implements ResourceManager
 			else
 				throw new InvalidTransactionException(tid);
 		}
+		//Commit the transaction on the backups.
+		gm.sendUpdates(new CommitMessage(tid));
 	}
 
 	public void abort(int tid) throws RemoteException, InvalidTransactionException{
@@ -151,18 +166,24 @@ public class ResourceManagerImpl implements ResourceManager
 			else
 				throw new InvalidTransactionException(tid);
 		}
+		//Abort this transaction on the backups.
+		gm.sendUpdates(new AbortMessage(tid));
 	}
 
 	// Remove the item out of storage
-	protected RMItem removeData(int id, String key) {
+	public RMItem removeData(int id, String key) {
 		synchronized(m_itemHT) {
 			synchronized(openTransactions) {
 				RMItem temp = (RMItem)openTransactions.get(id).remove(key);
 				if (temp == null) { //The value was not stored in the temporary hashtable, but in m_itemHT
 					Trace.info("RM::item was not in the temporary hashtable.");
+					gm.sendUpdates(new HashtableUpdate(id, key, null));
 					return (RMItem)m_itemHT.get(key);
 				}
-				else return temp;
+				else {
+					gm.sendUpdates(new HashtableUpdate(id, key, null));
+					return temp;
+				}
 			}
 		}
 	}

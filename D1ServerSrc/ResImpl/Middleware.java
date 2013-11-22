@@ -6,23 +6,29 @@ import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.RMISecurityManager;
+import java.rmi.ConnectException;
 
 import exceptions.*;
+import groupComm.ImThePrimary;
 
 
-public class Middleware implements MiddlewareInt{
-
-
-
+public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 	protected RMHashtable m_itemHT = new RMHashtable(); // The hastable will contain all the clients
 	protected static ResourceManager rmCars = null; // RM for the cars
 	protected static ResourceManager rmRooms = null; // RM for the rooms
 	protected static ResourceManager rmFlights = null; // RM for the flights
 	protected TransactionManager tM;
 	protected TreeMap<Integer, TemporaryHT> openTransactions = new TreeMap<Integer, TemporaryHT>();
+	GroupManagement gm;
+	
+	//These are the names of the RM JGroups.
+	final static String flightsChannel = "flights29";
+	final static String roomsChannel = "rooms29";
+	final static String carsChannel = "cars29";
 
 	public static void main(String args[]) {
 		String server="localhost";
@@ -58,22 +64,18 @@ public class Middleware implements MiddlewareInt{
 			Middleware obj = new Middleware();
 			MiddlewareInt mid = (MiddlewareInt) UnicastRemoteObject.exportObject(obj, 0);
 
-
-
 			// get a reference to the rmiregistry
 			Registry registry = LocateRegistry.getRegistry(server, port);
 			registry.rebind("middleware29",mid); // put the middleware remote object in the rmi registry for the client to see
 
+			//Set up the Middleware group
+			obj.setGM(new GroupManagement(obj, "middleware29"));
 
-			Registry registryFlights = LocateRegistry.getRegistry(serverFlights,portFlights);
-			Registry registryCars = LocateRegistry.getRegistry(serverCars,portCars);
-			Registry registryRooms = LocateRegistry.getRegistry(serverRooms,portRooms);
 			// get the rms for each resource
-			rmFlights = (ResourceManager) registryFlights.lookup("flights29");
-			rmCars = (ResourceManager) registryCars.lookup("cars29");
-			rmRooms = (ResourceManager) registryRooms.lookup("rooms29");
-
-
+			rmFlights = bindRM(serverFlights, portFlights, flightsChannel); //These are NOT JGroups channels, but the channels and bindings have the same names.
+			rmCars = bindRM(serverCars, portCars, carsChannel);
+			rmRooms = bindRM(serverRooms, portRooms, roomsChannel);
+			
 			if( rmCars!=null && rmRooms!=null && rmFlights!=null)
 			{
 				System.out.println("Successful");
@@ -101,6 +103,29 @@ public class Middleware implements MiddlewareInt{
 	public Middleware() throws RemoteException{
 		tM = new ResImpl.TransactionManager(this);
 	}
+	
+	public void setGM(GroupManagement gm) {
+		this.gm = gm;
+	}
+	
+	/*
+	 * This makes binding RMs easier
+	 */
+	public static ResourceManager bindRM(String server, int port, String binding) throws RemoteException, NotBoundException {
+		Registry registryFlights = LocateRegistry.getRegistry(server,port);
+		return (ResourceManager) registryFlights.lookup(binding);
+	}
+	
+	public void findPrimary(ResourceManager rm, String channel) {
+		ImThePrimary primary = gm.findPrimary(channel);
+		try {
+			rm = bindRM(primary.getHostname(), primary.getPort(), channel);
+		}
+		catch (Exception er) {
+			Trace.error("[Middleware] - Could not rebind to primary " + channel +" rm.");
+			er.printStackTrace();
+		}
+	}
 
 	public boolean shutdown() throws RemoteException{
 		rmCars.shutdown();
@@ -125,7 +150,7 @@ public class Middleware implements MiddlewareInt{
 	}
 
 	// Writes a data item
-	private void writeData(int id, String key, RMItem value)
+	public void writeData(int id, String key, RMItem value)
 	{
 		synchronized(openTransactions) {
 			// m_itemHT.put(key, value);
@@ -141,7 +166,7 @@ public class Middleware implements MiddlewareInt{
 	}
 
 	// Remove the item out of storage
-	protected RMItem removeData(int id, String key) {
+	public RMItem removeData(int id, String key) {
 		synchronized(m_itemHT) {
 			synchronized(openTransactions) {
 				RMItem temp = (RMItem)openTransactions.get(id).remove(key);
@@ -152,14 +177,30 @@ public class Middleware implements MiddlewareInt{
 			}
 		}
 	}
+	
 	public void start(int tid) throws RemoteException{
 		synchronized (openTransactions) {
 			if (openTransactions.containsKey(tid) == false)
 			{
 				tM.start(tid);
-				rmFlights.start(tid);
-				rmCars.start(tid);
-				rmRooms.start(tid);
+				try {
+					rmFlights.start(tid);
+				}
+				catch(ConnectException er) {
+					findPrimary(rmFlights, flightsChannel);
+				}
+				try {
+					rmCars.start(tid);
+				}
+				catch (ConnectException er) {
+					findPrimary(rmCars, carsChannel);
+				}
+				try {
+					rmRooms.start(tid);
+				}
+				catch (ConnectException er) {
+					findPrimary(rmRooms, roomsChannel);
+				}
 				openTransactions.put(tid, new TemporaryHT());
 				System.out.println("Started transaction " + tid);
 			}

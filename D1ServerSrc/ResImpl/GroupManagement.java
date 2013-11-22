@@ -4,6 +4,7 @@ import exceptions.TransactionAbortedException;
 import groupComm.AbortMessage;
 import groupComm.CommitMessage;
 import groupComm.HashtableUpdate;
+import groupComm.ImThePrimary;
 import groupComm.RMMessage;
 import groupComm.StartMessage;
 
@@ -18,11 +19,15 @@ import org.jgroups.ReceiverAdapter;
 import org.jgroups.View;
 import org.jgroups.util.Util;
 
+import ResInterface.MiddleResourceManageInt;
+
 public class GroupManagement extends ReceiverAdapter {
 	JChannel channel;
-	ResourceManagerImpl rm;
+	MiddleResourceManageInt rm;
 	
-	public GroupManagement(ResourceManagerImpl rm, String channelName) {
+	boolean primary = false;
+	
+	public GroupManagement(MiddleResourceManageInt rm, String channelName) {
 		this.rm = rm;
 		try {
 			//Create the connection to the channel for this RM's group.
@@ -52,14 +57,51 @@ public class GroupManagement extends ReceiverAdapter {
         if (channel.getAddress().equals(members.get(0))) {
         	//Hey, look! We're the primary copy! Let's get this show on the road.
         	System.out.println("[GM - INFO] " + channel.getAddressAsString() + " is officially the king of the " + channel.getName() + "channel now.");
+        	primary = true;
         }
+        else primary = false;
     }
     
     /*
-     * The RM will call this to send updates to the backup copies.
+     * The RM will call this to send updates to the backup copies. 
+     * If this is the primary copy, it will multicast the message to the rest of the group.
+     * If not, it will do nothing.
      */
     public void sendUpdates(RMMessage update) {
-    	
+    	if (primary) { 
+    		try {
+    			Message msg = new Message(null, null, update);
+    			channel.send(msg);
+    		}
+    		catch(Exception er ) {
+    			System.err.println("[GM - ERROR] Error sending message to the group.");
+    			er.printStackTrace();
+    		}
+    	}
+    }
+    
+    /*
+     * If something went wrong with the RMI request in the Middleware, we need to check if there
+     * is a new primary on an RM.
+     * 
+     * NOTE: This method is only run when GroupManagement is instantiated on the Middleware.
+     */
+    public ImThePrimary findPrimary(String channelName) {
+    	try {
+    		JChannel tempChannel = new JChannel();
+    		tempChannel.connect(channelName);
+    		List<Address> addresses = tempChannel.getView().getMembers();
+    		Collections.sort(addresses);
+    		Address primary = addresses.get(0);
+    		
+    		//Now, how to send the primary a message asking for its hostname and RMI port number...
+    		//TODO: Request the primary's hostname and RMI port number.
+    	}
+    	catch(Exception er) {
+    		System.err.println("[GM - ERROR] Failed to check who is the primary node on channel " + channelName);
+    		er.printStackTrace();
+    	}
+    	return null;
     }
     
     public void receive(Message msg) {
@@ -68,7 +110,7 @@ public class GroupManagement extends ReceiverAdapter {
          * Is the following an abuse of Java reflection and of Object Orientation in general? Probably. Do I care? No. No I don't.
          */
         try {
-	        if (obj.getClass().equals(HashtableUpdate.class)) {
+	        if (obj.getClass().equals(HashtableUpdate.class)) { //This is an update to our RM's hashtable
 	        	HashtableUpdate update = (HashtableUpdate)obj;
 	        	if (update.getValue() == null) { //This is a removal
 	        		rm.removeData(update.getTid(), update.getKey());
