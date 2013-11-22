@@ -1,6 +1,9 @@
 /client.class
+/clientTest.class
 /ClientRunner.class
 /ClientKiller.class
 /clientTest.class
 /ResInterface.jar
 /exceptions.jar
+*.jar
+*.class
