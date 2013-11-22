@@ -89,7 +89,7 @@ public class ResourceManagerImpl implements ResourceManager
 	}
 
 	// Writes a data item
-	private void writeData(int id, String key, RMItem value)
+	protected void writeData(int id, String key, RMItem value)
 	{
 		synchronized(openTransactions) {
 			// m_itemHT.put(key, value);
