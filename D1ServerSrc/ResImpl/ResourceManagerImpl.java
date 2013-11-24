@@ -121,10 +121,11 @@ public class ResourceManagerImpl implements ResourceManager, MiddleResourceManag
 			{
 				openTransactions.put(tid,new TemporaryHT());
 				System.out.println("Started transaction " + tid);
+				//Start the transaction on the backups.
+				gm.sendUpdates(new StartMessage(tid));
 			}
 		}
-		//Start the transaction on the backups.
-		gm.sendUpdates(new StartMessage(tid));
+		
 	}
 
 
@@ -148,13 +149,14 @@ public class ResourceManagerImpl implements ResourceManager, MiddleResourceManag
 				//The transaction is now closed, so delete it.
 				openTransactions.remove(tid);
 				System.out.println("Committed transaction " + tid);
+				//Commit the transaction on the backups.
+				gm.sendUpdates(new CommitMessage(tid));
 			}
 
 			else
 				throw new InvalidTransactionException(tid);
 		}
-		//Commit the transaction on the backups.
-		gm.sendUpdates(new CommitMessage(tid));
+		
 	}
 
 	public void abort(int tid) throws RemoteException, InvalidTransactionException{
@@ -162,12 +164,13 @@ public class ResourceManagerImpl implements ResourceManager, MiddleResourceManag
 			if (openTransactions.containsKey(tid))
 			{    openTransactions.remove(tid);
 			System.out.println("Aborted transaction " + tid);
+			//Abort this transaction on the backups.
+			gm.sendUpdates(new AbortMessage(tid));
 			}
 			else
 				throw new InvalidTransactionException(tid);
 		}
-		//Abort this transaction on the backups.
-		gm.sendUpdates(new AbortMessage(tid));
+		
 	}
 
 	// Remove the item out of storage

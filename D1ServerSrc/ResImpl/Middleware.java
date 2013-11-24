@@ -163,6 +163,8 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 				openTransactions.get(id).put(key, value);
 			}
 		}
+		//Write the changes to the backups
+		gm.sendUpdates(new HashtableUpdate(id, key, value));
 	}
 
 	// Remove the item out of storage
@@ -171,8 +173,12 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 			synchronized(openTransactions) {
 				RMItem temp = (RMItem)openTransactions.get(id).remove(key);
 				if (temp == null) { //The value was not stored in the temporary hashtable, but in m_itemHT
+					Trace.info("MID::item was not in the temporary hashtable.");
+					gm.sendUpdates(new HashtableUpdate(id, key, null));
 					return (RMItem)m_itemHT.get(key);
 				}
+				// The value is in the temp HT
+				gm.sendUpdates(new HashtableUpdate(id, key, null));
 				else return temp;
 			}
 		}
@@ -203,6 +209,8 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 				}
 				openTransactions.put(tid, new TemporaryHT());
 				System.out.println("Started transaction " + tid);
+				//Start the transaction on the backups.
+				gm.sendUpdates(new StartMessage(tid));
 			}
 		}
 	}
@@ -245,6 +253,8 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 
 				openTransactions.remove(tid);
 				System.out.println("COmmitted transaction " + tid);
+				//Commit the transaction on the backups.
+				gm.sendUpdates(new CommitMessage(tid));
 			}
 
 			else
@@ -261,8 +271,11 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 		rmCars.abort(tid);
 		rmRooms.abort(tid);
 		synchronized(openTransactions){
-			if (openTransactions.containsKey(tid))
+			if (openTransactions.containsKey(tid)){
 				openTransactions.remove(tid);
+				//Abort this transaction on the backups.
+				gm.sendUpdates(new AbortMessage(tid));
+			}
 			else
 				throw new InvalidTransactionException(tid);
 		}
