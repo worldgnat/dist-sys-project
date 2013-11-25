@@ -37,6 +37,7 @@ public class GroupManagement extends ReceiverAdapter {
 	        channel.getState(null, 10000);
 		}
 		catch(Exception er) {
+			System.err.println(er.toString());
 			System.err.println("[GM - ERROR] Couldn't create the connection to the JChannel.");
 		}
 	}
