@@ -1,3 +1,5 @@
 /LockManagerTest.class
 /MyThread.class
 /exceptions.jar
+*.jar
+*.class

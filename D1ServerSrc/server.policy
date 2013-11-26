@@ -1,4 +1,4 @@
-grant codeBase "file:/home/2009/nhrist2/pr/dist-sys-project/D1ServerSrc" {
+grant codeBase "file:/home/2010/pdavou/Documents/Distributed/Project/D1ServerSrc/" {
     permission java.security.AllPermission;
 };
 

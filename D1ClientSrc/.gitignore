@@ -4,3 +4,5 @@
 /clientTest.class
 /ResInterface.jar
 /exceptions.jar
+*.jar
+*.class
