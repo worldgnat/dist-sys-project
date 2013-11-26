@@ -14,3 +14,8 @@
 /TransactionKicker.class
 /NonExistantTransactionException.class
 /TemporaryHT.class
+/GroupManagement.class
+/HashtableUpdate.class
+/CommitMessage.class
+/StartMessage.class
+/AbortMessage.class

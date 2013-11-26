@@ -15,12 +15,14 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.RMISecurityManager;
 import exceptions.*;
+import groupComm.*;
 
-public class ResourceManagerImpl implements ResourceManager
+public class ResourceManagerImpl implements ResourceManager, MiddleResourceManageInt
 {
 
 	protected RMHashtable m_itemHT = new RMHashtable();
 	protected TreeMap<Integer, TemporaryHT> openTransactions = new TreeMap<Integer, TemporaryHT>();
+	GroupManagement gm;
 
 
 	public static void main(String args[]) {
@@ -29,11 +31,13 @@ public class ResourceManagerImpl implements ResourceManager
 
 		int port = 1030;
 		String binding = "flights29";
+		String groupName = "";
 
-		if (args.length == 2) {
+		if (args.length == 3) {
 			server = server + ":" + args[0];
 			port = Integer.parseInt(args[0]);
 			binding = args[1].trim();
+			groupName = args[2].trim();
 		} else {
 			System.err.println ("Wrong usage");
 			System.out.println("Usage: java ResImpl.ResourceManagerImpl [port] binding");
@@ -49,6 +53,9 @@ public class ResourceManagerImpl implements ResourceManager
 			// Bind the remote object's stub in the registry
 			Registry registry = LocateRegistry.getRegistry(port);
 			registry.rebind(binding, rm);
+			
+			//Set up group management layer
+			obj.setGM(new GroupManagement(obj, groupName));
 
 			System.err.println("Server ready");
 		} catch (Exception e) {
@@ -63,6 +70,10 @@ public class ResourceManagerImpl implements ResourceManager
 	}
 
 	public ResourceManagerImpl() throws RemoteException {
+	}
+	
+	public void setGM(GroupManagement gm) {
+		this.gm = gm;
 	}
 
 	public boolean shutdown(){
@@ -89,7 +100,7 @@ public class ResourceManagerImpl implements ResourceManager
 	}
 
 	// Writes a data item
-	private void writeData(int id, String key, RMItem value)
+	public void writeData(int id, String key, RMItem value)
 	{
 		synchronized(openTransactions) {
 			// m_itemHT.put(key, value);
@@ -102,6 +113,8 @@ public class ResourceManagerImpl implements ResourceManager
 				openTransactions.get(id).put(key, value);
 			}
 		}
+		//Write the changes to the backups.
+		gm.sendUpdates(new HashtableUpdate(id, key, value));
 	}
 
 	public void start(int tid) throws RemoteException{
@@ -110,8 +123,11 @@ public class ResourceManagerImpl implements ResourceManager
 			{
 				openTransactions.put(tid,new TemporaryHT());
 				System.out.println("Started transaction " + tid);
+				//Start the transaction on the backups.
+				gm.sendUpdates(new StartMessage(tid));
 			}
 		}
+		
 	}
 
 
@@ -135,11 +151,14 @@ public class ResourceManagerImpl implements ResourceManager
 				//The transaction is now closed, so delete it.
 				openTransactions.remove(tid);
 				System.out.println("Committed transaction " + tid);
+				//Commit the transaction on the backups.
+				gm.sendUpdates(new CommitMessage(tid));
 			}
 
 			else
 				throw new InvalidTransactionException(tid);
 		}
+		
 	}
 
 	public void abort(int tid) throws RemoteException, InvalidTransactionException{
@@ -147,22 +166,29 @@ public class ResourceManagerImpl implements ResourceManager
 			if (openTransactions.containsKey(tid))
 			{    openTransactions.remove(tid);
 			System.out.println("Aborted transaction " + tid);
+			//Abort this transaction on the backups.
+			gm.sendUpdates(new AbortMessage(tid));
 			}
 			else
 				throw new InvalidTransactionException(tid);
 		}
+		
 	}
 
 	// Remove the item out of storage
-	protected RMItem removeData(int id, String key) {
+	public RMItem removeData(int id, String key) {
 		synchronized(m_itemHT) {
 			synchronized(openTransactions) {
 				RMItem temp = (RMItem)openTransactions.get(id).remove(key);
 				if (temp == null) { //The value was not stored in the temporary hashtable, but in m_itemHT
 					Trace.info("RM::item was not in the temporary hashtable.");
+					gm.sendUpdates(new HashtableUpdate(id, key, null));
 					return (RMItem)m_itemHT.get(key);
 				}
-				else return temp;
+				else {
+					gm.sendUpdates(new HashtableUpdate(id, key, null));
+					return temp;
+				}
 			}
 		}
 	}
@@ -222,7 +248,7 @@ public class ResourceManagerImpl implements ResourceManager
 		Trace.info("RM::customer temporary hash:" + cust.hashCode());
 		Trace.info("RM::customer permanent hash: " + ((Customer)readData(id, Customer.getKey(customerID))).hashCode());
 		// check if the item is available
-		ReservableItem item = (ReservableItem)readData(id, key);
+		ReservableItem item = (ReservableItem)readData(id, key).clone();
 		if ( item == null ) {
 			Trace.warn("RM::reserveItem( " + id + ", " + customerID + ", " + key+", " +location+") failed--item doesn't exist" );
 			return false;
@@ -236,6 +262,7 @@ public class ResourceManagerImpl implements ResourceManager
 			// decrease the number of available items in the storage
 			item.setCount(item.getCount() - 1);
 			item.setReserved(item.getReserved()+1);
+			writeData(id,item.getKey(),item);
 
 			Trace.info("RM::reserveItem( " + id + ", " + customerID + ", " + key + ", " +location+") succeeded" );
 			return true;

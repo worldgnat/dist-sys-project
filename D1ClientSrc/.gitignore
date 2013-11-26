@@ -1,8 +1,13 @@
 /client.class
+/clientTest.class
 /ClientRunner.class
 /ClientKiller.class
 /clientTest.class
 /ResInterface.jar
 /exceptions.jar
 *.jar
+<<<<<<< HEAD
 *.class
+=======
+*.class
+>>>>>>> 50ddfc5a48a6a0560f48e8374c217efce7ba57ff
