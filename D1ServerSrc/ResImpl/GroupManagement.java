@@ -39,7 +39,7 @@ public class GroupManagement extends ReceiverAdapter {
 	        channel.getState(null, 10000);
 		}
 		catch(Exception er) {
-			System.err.println(er.toString());
+			er.printStackTrace();
 			System.err.println("[GM - ERROR] Couldn't create the connection to the JChannel.");
 		}
 	}
@@ -56,13 +56,13 @@ public class GroupManagement extends ReceiverAdapter {
         System.out.println("[GM - INFO] New view: " + new_view);
         List<Address> members = new_view.getMembers();
         //The member with the lowest number is, arbitrarily, the primary copy
-        Collections.sort(members);
+       /* Collections.sort(members);
         if (channel.getAddress().equals(members.get(0))) {
         	//Hey, look! We're the primary copy! Let's get this show on the road.
         	System.out.println("[GM - INFO] " + channel.getAddressAsString() + " is officially the king of the " + channel.getName() + "channel now.");
         	primary = true;
         }
-        else primary = false;
+        else primary = false;*/
     }
     
     /*

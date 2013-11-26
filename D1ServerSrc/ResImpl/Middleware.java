@@ -13,7 +13,7 @@ import java.rmi.RMISecurityManager;
 import java.rmi.ConnectException;
 
 import exceptions.*;
-import groupComm.ImThePrimary;
+import groupComm.*;
 
 
 public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
@@ -115,7 +115,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 		Registry registryFlights = LocateRegistry.getRegistry(server,port);
 		return (ResourceManager) registryFlights.lookup(binding);
 	}
-	
+	/*
 	public void findPrimary(ResourceManager rm, String channel) {
 		ImThePrimary primary = gm.findPrimary(channel);
 		try {
@@ -125,7 +125,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 			Trace.error("[Middleware] - Could not rebind to primary " + channel +" rm.");
 			er.printStackTrace();
 		}
-	}
+	}*/
 
 	public boolean shutdown() throws RemoteException{
 		rmCars.shutdown();
@@ -178,8 +178,11 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 					return (RMItem)m_itemHT.get(key);
 				}
 				// The value is in the temp HT
-				gm.sendUpdates(new HashtableUpdate(id, key, null));
-				else return temp;
+				
+				else{
+				 gm.sendUpdates(new HashtableUpdate(id,key,null));
+				 return temp;
+				}
 			}
 		}
 	}
@@ -193,19 +196,22 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 					rmFlights.start(tid);
 				}
 				catch(ConnectException er) {
-					findPrimary(rmFlights, flightsChannel);
+					System.out.println("Cannot connect to Flights RM");
+					//findPrimary(rmFlights, flightsChannel);
 				}
 				try {
 					rmCars.start(tid);
 				}
 				catch (ConnectException er) {
-					findPrimary(rmCars, carsChannel);
+					System.out.println("Cannot connect to Cars RM");
+					//findPrimary(rmCars, carsChannel);
 				}
 				try {
 					rmRooms.start(tid);
 				}
 				catch (ConnectException er) {
-					findPrimary(rmRooms, roomsChannel);
+					System.out.println("Cannot connect to Rooms RM");
+					//findPrimary(rmRooms, roomsChannel);
 				}
 				openTransactions.put(tid, new TemporaryHT());
 				System.out.println("Started transaction " + tid);
