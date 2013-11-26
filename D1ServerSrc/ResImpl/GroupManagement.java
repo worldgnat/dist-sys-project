@@ -34,9 +34,13 @@ public class GroupManagement extends ReceiverAdapter {
 		try {
 			//Create the connection to the channel for this RM's group.
 			channel=new JChannel();
+			System.out.println("Test 1");
 	        channel.setReceiver(this);
+			System.out.println("Test 2");
 	        channel.connect(channelName);
+			System.out.println("Test 3");
 	        channel.getState(null, 10000);
+			System.out.println("Test 4");
 		}
 		catch(Exception er) {
 			er.printStackTrace();
@@ -54,7 +58,9 @@ public class GroupManagement extends ReceiverAdapter {
 	 */
     public void viewAccepted(View new_view) {
         System.out.println("[GM - INFO] New view: " + new_view);
-        List<Address> members = new_view.getMembers();
+        //List<Address> members = new_view.getMembers();
+			System.out.println("Test 5");
+
         //The member with the lowest number is, arbitrarily, the primary copy
        /* Collections.sort(members);
         if (channel.getAddress().equals(members.get(0))) {
