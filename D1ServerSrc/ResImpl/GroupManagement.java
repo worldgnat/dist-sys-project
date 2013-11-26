@@ -26,9 +26,11 @@ public class GroupManagement extends ReceiverAdapter {
 	MiddleResourceManageInt rm;
 	
 	boolean primary = false;
-	
+	boolean atMiddleware;
+		
 	public GroupManagement(MiddleResourceManageInt rm, String channelName) {
 		this.rm = rm;
+		atMiddleware = (rm.getClass().equals(Middleware.class));
 		try {
 			//Create the connection to the channel for this RM's group.
 			channel=new JChannel();
@@ -78,30 +80,6 @@ public class GroupManagement extends ReceiverAdapter {
     			er.printStackTrace();
     		}
     	}
-    }
-    
-    /*
-     * If something went wrong with the RMI request in the Middleware, we need to check if there
-     * is a new primary on an RM.
-     * 
-     * NOTE: This method is only run when GroupManagement is instantiated on the Middleware.
-     */
-    public ImThePrimary findPrimary(String channelName) {
-    	try {
-    		JChannel tempChannel = new JChannel();
-    		tempChannel.connect(channelName);
-    		List<Address> addresses = tempChannel.getView().getMembers();
-    		Collections.sort(addresses);
-    		Address primary = addresses.get(0);
-    		
-    		//Now, how to send the primary a message asking for its hostname and RMI port number...
-    		//TODO: Request the primary's hostname and RMI port number.
-    	}
-    	catch(Exception er) {
-    		System.err.println("[GM - ERROR] Failed to check who is the primary node on channel " + channelName);
-    		er.printStackTrace();
-    	}
-    	return null;
     }
     
     public void receive(Message msg) {
