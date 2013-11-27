@@ -98,6 +98,7 @@ public class GroupManagement extends ReceiverAdapter {
     	}
     	catch (Exception er) {
     		System.err.println("[GM - ERROR] Failed to send primary request to channel " + this.channel.getName());
+    		er.printStackTrace();
     	}
     }
  
