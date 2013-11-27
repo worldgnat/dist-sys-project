@@ -34,6 +34,7 @@ public class GroupManagement extends ReceiverAdapter {
 	boolean primary = false;
 	boolean atMiddleware;
 	boolean isActive = false;
+	boolean waitingForPrimary = false;
 	
 	public GroupManagement(MiddleResourceManageInt rm, String channelName) {
 		this.rm = rm;
@@ -95,9 +96,11 @@ public class GroupManagement extends ReceiverAdapter {
     
     public void findPrimary(String channel) {
     	JChannel tempChannel = getChannel(channel);
+    	if (waitingForPrimary) System.err.println("[GM - INFO] Requesting primary while waiting for primary acknowledgement. Messages will be discarded.");
     	try {
     		System.out.println("Requesting primary from channel " + channel);
     		tempChannel.send(new Message(null, null, new RequestPrimary(this.channel.getName())));
+    		waitingForPrimary = true;
     	}
     	catch (Exception er) {
     		System.err.println("[GM - ERROR] Failed to send primary request to channel " + this.channel.getName());
@@ -142,6 +145,7 @@ public class GroupManagement extends ReceiverAdapter {
 	        else if (obj.getClass().equals(ImThePrimary.class)) {
 	        	if (rm.getClass().equals(Middleware.class)) {
 	        		rm.setPrimary((ImThePrimary)obj);
+	        		waitingForPrimary = false;
 	        	}
 	        }
         }
