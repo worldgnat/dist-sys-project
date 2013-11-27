@@ -49,6 +49,7 @@ public class GroupManagement extends ReceiverAdapter {
 		try {
 			//Create the connection to the channel for this RM's group.
 			channel=new JChannel(configs.get(channel));
+			System.out.println(channel);
 	        channel.setReceiver(this);
 	        channel.connect(channelName);
 	        channel.getState(null, 10000);
