@@ -5,6 +5,7 @@ import java.rmi.RemoteException;
 import ResImpl.RMItem;
 import exceptions.InvalidTransactionException;
 import exceptions.TransactionAbortedException;
+import groupComm.ImThePrimary;
 
 /*
  * Perhaps this is sloppy, but it captures all the methods that
@@ -19,4 +20,9 @@ public interface MiddleResourceManageInt {
 	
 	public void writeData(int tid, String key, RMItem value);
 	public RMItem removeData(int tid, String key);
+	
+	public void setPrimary(ImThePrimary primary);
+	
+	public int getPort();
+	public String getBinding();
 }

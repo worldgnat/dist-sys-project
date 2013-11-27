@@ -23,6 +23,9 @@ public class ResourceManagerImpl implements ResourceManager, MiddleResourceManag
 	protected RMHashtable m_itemHT = new RMHashtable();
 	protected TreeMap<Integer, TemporaryHT> openTransactions = new TreeMap<Integer, TemporaryHT>();
 	GroupManagement gm;
+	
+	int port;
+	String binding;
 
 
 	public static void main(String args[]) {
@@ -46,7 +49,7 @@ public class ResourceManagerImpl implements ResourceManager, MiddleResourceManag
 
 		try {
 			// create a new Server object
-			ResourceManagerImpl obj = new ResourceManagerImpl();
+			ResourceManagerImpl obj = new ResourceManagerImpl(port, binding);
 			// dynamically generate the stub (client proxy)
 			ResourceManager rm = (ResourceManager) UnicastRemoteObject.exportObject(obj, 0);
 
@@ -55,7 +58,8 @@ public class ResourceManagerImpl implements ResourceManager, MiddleResourceManag
 			registry.rebind(binding, rm);
 			
 			//Set up group management layer
-			obj.setGM(new GroupManagement(obj, groupName));
+			//obj.setGM(new GroupManagement(obj, binding));
+			
 
 			System.err.println("Server ready");
 		} catch (Exception e) {
@@ -69,7 +73,9 @@ public class ResourceManagerImpl implements ResourceManager, MiddleResourceManag
 		}
 	}
 
-	public ResourceManagerImpl() throws RemoteException {
+	public ResourceManagerImpl(int port, String binding) throws RemoteException {
+		this.port = port;
+		this.binding = binding;
 	}
 	
 	public void setGM(GroupManagement gm) {
@@ -97,6 +103,13 @@ public class ResourceManagerImpl implements ResourceManager, MiddleResourceManag
 		synchronized(m_itemHT) {
 			return (RMItem) m_itemHT.get(key);
 		}
+	}
+	
+	public int getPort() { return port; }
+	public String getBinding() { return binding; }
+	
+	public void setPrimary(ImThePrimary primary) { 
+		//Do nothing. This method is for the Middleware.
 	}
 
 	// Writes a data item

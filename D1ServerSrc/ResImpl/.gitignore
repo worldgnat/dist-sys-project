@@ -19,3 +19,5 @@
 /CommitMessage.class
 /StartMessage.class
 /AbortMessage.class
+/RequestPrimary.class
+/RequestPrimary.java
