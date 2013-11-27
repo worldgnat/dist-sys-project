@@ -127,7 +127,7 @@ public class ResourceManagerImpl implements ResourceManager, MiddleResourceManag
 			}
 		}
 		//Write the changes to the backups.
-		gm.sendUpdates(new HashtableUpdate(id, key, value));
+		gm.sendUpdates(new HashtableUpdate(id, key, value, getBinding()));
 	}
 
 	public void start(int tid) throws RemoteException{
@@ -137,7 +137,7 @@ public class ResourceManagerImpl implements ResourceManager, MiddleResourceManag
 				openTransactions.put(tid,new TemporaryHT());
 				System.out.println("Started transaction " + tid);
 				//Start the transaction on the backups.
-				gm.sendUpdates(new StartMessage(tid));
+				gm.sendUpdates(new StartMessage(tid, getBinding()));
 			}
 		}
 		
@@ -165,7 +165,7 @@ public class ResourceManagerImpl implements ResourceManager, MiddleResourceManag
 				openTransactions.remove(tid);
 				System.out.println("Committed transaction " + tid);
 				//Commit the transaction on the backups.
-				gm.sendUpdates(new CommitMessage(tid));
+				gm.sendUpdates(new CommitMessage(tid, getBinding()));
 			}
 
 			else
@@ -180,7 +180,7 @@ public class ResourceManagerImpl implements ResourceManager, MiddleResourceManag
 			{    openTransactions.remove(tid);
 			System.out.println("Aborted transaction " + tid);
 			//Abort this transaction on the backups.
-			gm.sendUpdates(new AbortMessage(tid));
+			gm.sendUpdates(new AbortMessage(tid, getBinding()));
 			}
 			else
 				throw new InvalidTransactionException(tid);
@@ -195,11 +195,11 @@ public class ResourceManagerImpl implements ResourceManager, MiddleResourceManag
 				RMItem temp = (RMItem)openTransactions.get(id).remove(key);
 				if (temp == null) { //The value was not stored in the temporary hashtable, but in m_itemHT
 					Trace.info("RM::item was not in the temporary hashtable.");
-					gm.sendUpdates(new HashtableUpdate(id, key, null));
+					gm.sendUpdates(new HashtableUpdate(id, key, null, getBinding()));
 					return (RMItem)m_itemHT.get(key);
 				}
 				else {
-					gm.sendUpdates(new HashtableUpdate(id, key, null));
+					gm.sendUpdates(new HashtableUpdate(id, key, null, getBinding()));
 					return temp;
 				}
 			}

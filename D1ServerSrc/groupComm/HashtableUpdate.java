@@ -6,8 +6,8 @@ public class HashtableUpdate extends RMMessage {
 	String key;
 	RMItem value;
 	
-	public HashtableUpdate(int tid, String key, RMItem value) {
-		super(tid);
+	public HashtableUpdate(int tid, String key, RMItem value, String sourceChannel) {
+		super(tid, sourceChannel);
 		this.key = key;
 		this.value = value;
 	}

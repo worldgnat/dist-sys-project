@@ -1,7 +1,7 @@
 package groupComm;
 
 public class CommitMessage extends RMMessage {
-	public CommitMessage(int tid) {
-		super(tid);
+	public CommitMessage(int tid, String sourceChannel) {
+		super(tid, sourceChannel);
 	}
 }

@@ -9,7 +9,6 @@ import groupComm.RMMessage;
 import groupComm.RequestPrimary;
 import groupComm.StartMessage;
 
-import java.net.UnknownHostException;
 import java.rmi.RemoteException;
 import java.util.LinkedList;
 import java.util.List;
@@ -38,13 +37,10 @@ public class GroupManagement extends ReceiverAdapter implements Runnable {
 		try {
 			//Create the connection to the channel for this RM's group.
 			channel=new JChannel();
-			System.out.println("Test 1");
 	        channel.setReceiver(this);
-			System.out.println("Test 2");
 	        channel.connect(channelName);
-			System.out.println("Test 3");
 	        channel.getState(null, 10000);
-			System.out.println("Test 4");
+	        channel.setDiscardOwnMessages(true); //I love JGroups. I really do.
 		}
 		catch(Exception er) {
 			er.printStackTrace();
@@ -74,8 +70,6 @@ public class GroupManagement extends ReceiverAdapter implements Runnable {
     public void viewAccepted(View new_view) {
         System.out.println("[GM - INFO] New view: " + new_view);
         //List<Address> members = new_view.getMembers();
-			System.out.println("Test 5");
-
         //The member with the lowest number is, arbitrarily, the primary copy
        /* Collections.sort(members);
         if (channel.getAddress().equals(members.get(0))) {
@@ -111,20 +105,20 @@ public class GroupManagement extends ReceiverAdapter implements Runnable {
          */
         //TODO: make sure that these messages come from our channel! All except RequestPrimary and ImThe Primary, that is.
         try {
-	        if (obj.getClass().equals(HashtableUpdate.class)) { //This is an update to our RM's hashtable
+	        if (obj.getClass().equals(HashtableUpdate.class) && isThisChannel(obj)) { //This is an update to our RM's hashtable
 	        	HashtableUpdate update = (HashtableUpdate)obj;
 	        	if (update.getValue() == null) { //This is a removal
 	        		rm.removeData(update.getTid(), update.getKey());
 	        	}
 	        	else rm.writeData(update.getTid(), update.getKey(), update.getValue());
 	        }
-	        else if (obj.getClass().equals(StartMessage.class)) {
+	        else if (obj.getClass().equals(StartMessage.class) && isThisChannel(obj)) {
 	        	rm.start(((StartMessage)obj).getTid());
 	        }
-	        else if (obj.getClass().equals(CommitMessage.class)) {
+	        else if (obj.getClass().equals(CommitMessage.class) && isThisChannel(obj)) {
 	        	rm.commit(((CommitMessage)obj).getTid());
 	        }
-	        else if (obj.getClass().equals(AbortMessage.class)) {
+	        else if (obj.getClass().equals(AbortMessage.class) && isThisChannel(obj)) {
 	        	rm.abort(((AbortMessage)obj).getTid());
 	        }
 	        else if (obj.getClass().equals(RequestPrimary.class)) {
@@ -154,6 +148,10 @@ public class GroupManagement extends ReceiverAdapter implements Runnable {
         catch(InvalidTransactionException er ) {
         	System.err.println("[GM - ERROR] Invalid transaction received.");
         }
+    }
+    
+    public boolean isThisChannel(Object obj) {
+    	return ((RMMessage)obj).getSourceChannel().equals(channel.getName());
     }
 
     public void setState(byte[] new_state) {

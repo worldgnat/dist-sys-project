@@ -198,7 +198,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 			}
 		}
 		//Write the changes to the backups
-		gm.sendUpdates(new HashtableUpdate(id, key, value));
+		gm.sendUpdates(new HashtableUpdate(id, key, value, getBinding()));
 	}
 
 	// Remove the item out of storage
@@ -208,13 +208,13 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 				RMItem temp = (RMItem)openTransactions.get(id).remove(key);
 				if (temp == null) { //The value was not stored in the temporary hashtable, but in m_itemHT
 					Trace.info("MID::item was not in the temporary hashtable.");
-					gm.sendUpdates(new HashtableUpdate(id, key, null));
+					gm.sendUpdates(new HashtableUpdate(id, key, null, getBinding()));
 					return (RMItem)m_itemHT.get(key);
 				}
 				// The value is in the temp HT
 				
 				else{
-				 gm.sendUpdates(new HashtableUpdate(id,key,null));
+				 gm.sendUpdates(new HashtableUpdate(id,key,null, getBinding()));
 				 return temp;
 				}
 			}
@@ -250,7 +250,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 				openTransactions.put(tid, new TemporaryHT());
 				System.out.println("Started transaction " + tid);
 				//Start the transaction on the backups.
-				gm.sendUpdates(new StartMessage(tid));
+				gm.sendUpdates(new StartMessage(tid, getBinding()));
 			}
 		}
 	}
@@ -294,7 +294,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 				openTransactions.remove(tid);
 				System.out.println("COmmitted transaction " + tid);
 				//Commit the transaction on the backups.
-				gm.sendUpdates(new CommitMessage(tid));
+				gm.sendUpdates(new CommitMessage(tid, getBinding()));
 			}
 
 			else
@@ -314,7 +314,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 			if (openTransactions.containsKey(tid)){
 				openTransactions.remove(tid);
 				//Abort this transaction on the backups.
-				gm.sendUpdates(new AbortMessage(tid));
+				gm.sendUpdates(new AbortMessage(tid, getBinding()));
 			}
 			else
 				throw new InvalidTransactionException(tid);
