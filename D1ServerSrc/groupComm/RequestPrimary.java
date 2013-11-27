@@ -1,8 +1,8 @@
 package groupComm;
 
-import org.jgroups.JChannel;
+import java.io.Serializable;
 
-public class RequestPrimary {
+public class RequestPrimary implements Serializable {
 	String responseChannel;
 	
 	public RequestPrimary(String responseChannel) {
