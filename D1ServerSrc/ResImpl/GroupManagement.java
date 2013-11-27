@@ -202,7 +202,7 @@ class PrimarySetter extends ReceiverAdapter implements Runnable {
 			channel = new JChannel();
 			channel.setReceiver(this);
 			channel.connect(connectChannel);
-			channel.send(new Message(null, null, new RequestPrimary(channel.getName())));
+			//channel.send(new Message(null, null, new RequestPrimary(channel.getName())));
 		}
 		catch (Exception er) {
 			er.printStackTrace();
@@ -217,6 +217,11 @@ class PrimarySetter extends ReceiverAdapter implements Runnable {
 				er.printStackTrace();
 			}
 		}
+	}
+	
+	public void viewAccepted(View new_view) {
+		System.out.println("[Primary Setter] We've received the new view! We're _cool_!");
+		System.out.println(new_view);
 	}
 	
 	public void receive(Message msg) {
