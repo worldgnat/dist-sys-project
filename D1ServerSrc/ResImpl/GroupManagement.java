@@ -199,6 +199,7 @@ class PrimarySetter extends ReceiverAdapter implements Runnable {
 	public PrimarySetter(String connectChannel, MiddleResourceManageInt rm) {
 		try {
 			this.rm = rm;
+			System.out.println("[Primary Setter] Connecting to " + connectChannel);
 			channel = new JChannel();
 			channel.setReceiver(this);
 			channel.connect(connectChannel);
