@@ -30,6 +30,9 @@ public class GroupManagement extends ReceiverAdapter {
 	MiddleResourceManageInt rm;
 	final List<String> state=new LinkedList<String>();
 	TreeMap<String, JChannel> openChannels = new TreeMap<String, JChannel>();
+	
+	TreeMap<String, String> configs = new TreeMap<String, String>();
+	
 
 	boolean primary = false;
 	boolean atMiddleware;
@@ -39,9 +42,13 @@ public class GroupManagement extends ReceiverAdapter {
 	public GroupManagement(MiddleResourceManageInt rm, String channelName) {
 		this.rm = rm;
 		atMiddleware = (rm.getClass().equals(Middleware.class));
+		configs.put("flights29", "flights_udp.xml");
+		configs.put("rooms29", "rooms_udp.xml");
+		configs.put("cars29", "cars_udp.xml");
+		configs.put("middleware29", "middleware_udp.xml");
 		try {
 			//Create the connection to the channel for this RM's group.
-			channel=new JChannel();
+			channel=new JChannel(configs.get(channel));
 	        channel.setReceiver(this);
 	        channel.connect(channelName);
 	        channel.getState(null, 10000);
@@ -95,7 +102,7 @@ public class GroupManagement extends ReceiverAdapter {
     }
     
     public void findPrimary(String channel) {
-    	new Thread(new PrimarySetter(channel, rm)).start();
+    	new Thread(new PrimarySetter(channel, rm, configs.get(channel))).start();
     }
  
     public void receive(Message msg) {
@@ -167,7 +174,7 @@ public class GroupManagement extends ReceiverAdapter {
     	JChannel tempChannel;
     	if (!openChannels.containsKey(channel)) {
     		try {
-    			tempChannel = new JChannel();
+    			tempChannel = new JChannel(configs.get(channel));
     			tempChannel.setReceiver(this);
     			tempChannel.connect(channel);
     		}
@@ -196,11 +203,11 @@ public class GroupManagement extends ReceiverAdapter {
 class PrimarySetter extends ReceiverAdapter implements Runnable {
 	MiddleResourceManageInt rm;
 	JChannel channel;
-	public PrimarySetter(String connectChannel, MiddleResourceManageInt rm) {
+	public PrimarySetter(String connectChannel, MiddleResourceManageInt rm, String config) {
 		try {
 			this.rm = rm;
 			System.out.println("[Primary Setter] Connecting to " + connectChannel);
-			channel = new JChannel();
+			channel = new JChannel(config);
 			channel.setReceiver(this);
 			channel.connect(connectChannel);
 			channel.getState(null, 10000);
