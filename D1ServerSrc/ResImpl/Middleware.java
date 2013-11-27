@@ -1,19 +1,28 @@
 package ResImpl;
 
-import ResInterface.*;
+import exceptions.InvalidTransactionException;
+import exceptions.TransactionAbortedException;
+import groupComm.AbortMessage;
+import groupComm.CommitMessage;
+import groupComm.HashtableUpdate;
+import groupComm.ImThePrimary;
+import groupComm.StartMessage;
 
-import java.util.*;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.rmi.registry.Registry;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.NotBoundException;
-import java.rmi.RemoteException;
-import java.rmi.server.UnicastRemoteObject;
-import java.rmi.RMISecurityManager;
 import java.rmi.ConnectException;
+import java.rmi.NotBoundException;
+import java.rmi.RMISecurityManager;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
+import java.util.Calendar;
+import java.util.Queue;
+import java.util.TreeMap;
+import java.util.Vector;
 
-import exceptions.*;
-import groupComm.*;
+import ResInterface.MiddleResourceManageInt;
+import ResInterface.MiddlewareInt;
+import ResInterface.ResourceManager;
 
 
 public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
@@ -24,6 +33,8 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 	protected TransactionManager tM;
 	protected TreeMap<Integer, TemporaryHT> openTransactions = new TreeMap<Integer, TemporaryHT>();
 	GroupManagement gm;
+	int port;
+	String binding;
 	
 	//These are the names of the RM JGroups.
 	final static String flightsChannel = "flights29";
@@ -41,7 +52,6 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 		int portCars = 4030;
 		int portRooms = 1030;
 		int portFlights = 2030;
-
 
 		// Get the server and port for the rmi registry
 
@@ -61,7 +71,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 
 		try
 		{
-			Middleware obj = new Middleware();
+			Middleware obj = new Middleware(port, "middleware29");
 			MiddlewareInt mid = (MiddlewareInt) UnicastRemoteObject.exportObject(obj, 0);
 
 			// get a reference to the rmiregistry
@@ -100,12 +110,36 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 
 	} // end main
 
-	public Middleware() throws RemoteException{
+	public Middleware(int port, String binding) throws RemoteException{
 		tM = new ResImpl.TransactionManager(this);
+		this.port = port;
+		this.binding = binding;
 	}
+	
+	public int getPort() { return port; }
+	public String getBinding() { return binding; }
 	
 	public void setGM(GroupManagement gm) {
 		this.gm = gm;
+	}
+	
+	public void setPrimary(ImThePrimary primary) { 
+		try {
+			switch (primary.getChannel()) {
+			case "flights29":
+				rmFlights = bindRM(primary.getHostname(), primary.getPort(), primary.getChannel());
+				break;
+			case "rooms29":
+				rmRooms = bindRM(primary.getHostname(), primary.getPort(), primary.getChannel());
+				break;
+			case "cars29":
+				rmCars = bindRM(primary.getHostname(), primary.getPort(), primary.getChannel());
+				break;
+			}
+		}
+		catch (Exception er) {
+			Trace.warn("MIDDLEWARE: Failed to bind new primary RM.");
+		}
 	}
 	
 	/*

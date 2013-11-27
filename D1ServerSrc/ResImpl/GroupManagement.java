@@ -6,16 +6,15 @@ import groupComm.CommitMessage;
 import groupComm.HashtableUpdate;
 import groupComm.ImThePrimary;
 import groupComm.RMMessage;
+import groupComm.RequestPrimary;
 import groupComm.StartMessage;
 
+import java.net.UnknownHostException;
 import java.rmi.RemoteException;
-import java.util.Collections;
-import java.util.List;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.TreeMap;
 
-import java.io.*;
-
-import org.jgroups.Address;
 import org.jgroups.JChannel;
 import org.jgroups.Message;
 import org.jgroups.ReceiverAdapter;
@@ -24,15 +23,15 @@ import org.jgroups.util.Util;
 
 import ResInterface.MiddleResourceManageInt;
 
-public class GroupManagement extends ReceiverAdapter {
+public class GroupManagement extends ReceiverAdapter implements Runnable {
 	JChannel channel;
 	MiddleResourceManageInt rm;
-	    final List<String> state=new LinkedList<String>();
-String user_name=System.getProperty("user.name", "n/a");
+	final List<String> state=new LinkedList<String>();
+	TreeMap<String, JChannel> openChannels = new TreeMap<String, JChannel>();
 
 	boolean primary = false;
 	boolean atMiddleware;
-	/*	
+	
 	public GroupManagement(MiddleResourceManageInt rm, String channelName) {
 		this.rm = rm;
 		atMiddleware = (rm.getClass().equals(Middleware.class));
@@ -51,21 +50,18 @@ String user_name=System.getProperty("user.name", "n/a");
 			er.printStackTrace();
 			System.err.println("[GM - ERROR] Couldn't create the connection to the JChannel.");
 		}
-	}*/
-	public GroupManagement(MiddleResourceManageInt rm, String channelName) {
-		try {
-		start();
-		}catch (Exception er ) { er.printStackTrace(); }
 	}
-	public void sendUpdates(Object o) {}
-    private void start() throws Exception {
-        channel=new JChannel();
-        channel.setReceiver(this);
-        channel.connect("cars29");
-        channel.getState(null, 10000);
-       eventLoop();
-//        channel.close();
-    }
+	
+	public void run() {
+		while (true) {
+			try {
+				Thread.sleep(1);
+			}
+			catch (Exception er) {
+				System.out.println("[GM - ERROR] Thread can't spin. You broke the world.");
+			}
+		}
+	}
 	
 	/*
 	 * Catches changes in the view. This will happen in the case that we have added a group,
@@ -89,30 +85,13 @@ String user_name=System.getProperty("user.name", "n/a");
         }
         else primary = false;*/
     }
-    private void eventLoop() {
-        BufferedReader in=new BufferedReader(new InputStreamReader(System.in));
-        while(true) {
-            try {
-                System.out.print("> "); System.out.flush();
-                String line=in.readLine().toLowerCase();
-                if(line.startsWith("quit") || line.startsWith("exit")) {
-                    break;
-                }
-                line="[" + user_name + "] " + line;
-                Message msg=new Message(null, null, line);
-                channel.send(msg);
-            }
-            catch(Exception e) {
-            }
-        }
-    }
     
     /*
      * The RM will call this to send updates to the backup copies. 
      * If this is the primary copy, it will multicast the message to the rest of the group.
      * If not, it will do nothing.
      */
-    /*public void sendUpdates(RMMessage update) {
+    public void sendUpdates(RMMessage update) {
     	if (primary) { 
     		try {
     			Message msg = new Message(null, null, update);
@@ -123,21 +102,14 @@ String user_name=System.getProperty("user.name", "n/a");
     			er.printStackTrace();
     		}
     	}
-    }*/
-    public void receive(Message msg) {
-        String line=msg.getSrc() + ": " + msg.getObject();
-        System.out.println(line);
-        synchronized(state) {
-            state.add(line);
-        }
-    }   
-/* 
+    }
+ 
     public void receive(Message msg) {
         Object obj = msg.getObject();
         /*
          * Is the following an abuse of Java reflection and of Object Orientation in general? Probably. Do I care? No. No I don't.
          */
-/*
+        //TODO: make sure that these messages come from our channel! All except RequestPrimary and ImThe Primary, that is.
         try {
 	        if (obj.getClass().equals(HashtableUpdate.class)) { //This is an update to our RM's hashtable
 	        	HashtableUpdate update = (HashtableUpdate)obj;
@@ -155,6 +127,22 @@ String user_name=System.getProperty("user.name", "n/a");
 	        else if (obj.getClass().equals(AbortMessage.class)) {
 	        	rm.abort(((AbortMessage)obj).getTid());
 	        }
+	        else if (obj.getClass().equals(RequestPrimary.class)) {
+	        	if (primary) {
+	        		JChannel responseChannel = getChannel(((RequestPrimary)obj).getResponseChannel());
+	        		try {
+	        			responseChannel.send(new Message(null, null, new ImThePrimary(java.net.InetAddress.getLocalHost().getCanonicalHostName(), rm.getPort(), channel.getName())));
+	        		}
+	        		catch (Exception er ) {
+	        			System.err.println("[GM - ERROR] Unable to determine hostname or send ImThePrimary response message.");
+	        		}
+	        	}
+	        }
+	        else if (obj.getClass().equals(ImThePrimary.class)) {
+	        	if (rm.getClass().equals(Middleware.class)) {
+	        		rm.setPrimary((ImThePrimary)obj);
+	        	}
+	        }
         }
         catch(RemoteException er) {
         	System.err.println("[GM - ERROR] Problem running message on RM.");
@@ -167,8 +155,7 @@ String user_name=System.getProperty("user.name", "n/a");
         	System.err.println("[GM - ERROR] Invalid transaction received.");
         }
     }
-    */
-/*
+
     public void setState(byte[] new_state) {
     	try {
             rm =(ResourceManagerImpl)Util.objectFromByteBuffer(new_state);
@@ -177,27 +164,25 @@ String user_name=System.getProperty("user.name", "n/a");
         catch(Exception e) {
             e.printStackTrace();
         }
-    }*/
-    public void setState(byte[] new_state) {
-        try {
-            List<String> list=(List<String>)Util.objectFromByteBuffer(new_state);
-            synchronized(state) {
-                state.clear();
-                state.addAll(list);
-            }
-            System.out.println("received state (" + list.size() + " messages in chat history):");
-            for(String str: list) {
-                System.out.println(str);
-            }
-        }
-        catch(Exception e) {
-            e.printStackTrace();
-        }
     }
     
-    /*
-     * 
-     
+    public JChannel getChannel(String channel) {
+    	JChannel tempChannel;
+    	if (!openChannels.containsKey(channel)) {
+    		try {
+    			tempChannel = new JChannel();
+    			tempChannel.setReceiver(this);
+    			tempChannel.connect(channel);
+    		}
+    		catch (Exception er ) {
+    			System.err.println("[GM - ERROR] Failed to connect to channel " + channel);
+    			tempChannel = null;
+    		}
+    	}
+    	else tempChannel = openChannels.get(channel);
+    	return tempChannel;
+    }
+    
     public byte[] getState() {
     	try {
 	    	synchronized(rm) {
@@ -208,16 +193,7 @@ String user_name=System.getProperty("user.name", "n/a");
     		er.printStackTrace();
     	}
     	return null;
-    }*/
-    public byte[] getState() {
-        synchronized(state) {
-            try {
-                return Util.objectToByteBuffer(state);
-            }
-            catch(Exception e) {
-                e.printStackTrace();
-                return null;
-            }
-        }
     }
 }
+
+    
