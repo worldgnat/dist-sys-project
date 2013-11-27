@@ -34,7 +34,7 @@ public class GroupManagement extends ReceiverAdapter {
 	boolean primary = false;
 	boolean atMiddleware;
 	boolean isActive = false;
-	boolean waitingForPrimary = false;
+	
 	
 	public GroupManagement(MiddleResourceManageInt rm, String channelName) {
 		this.rm = rm;
@@ -95,17 +95,7 @@ public class GroupManagement extends ReceiverAdapter {
     }
     
     public void findPrimary(String channel) {
-    	JChannel tempChannel = getChannel(channel);
-    	if (waitingForPrimary) System.err.println("[GM - INFO] Requesting primary while waiting for primary acknowledgement. Messages will be discarded.");
-    	try {
-    		System.out.println("Requesting primary from channel " + channel);
-    		tempChannel.send(new Message(null, null, new RequestPrimary(this.channel.getName())));
-    		waitingForPrimary = true;
-    	}
-    	catch (Exception er) {
-    		System.err.println("[GM - ERROR] Failed to send primary request to channel " + this.channel.getName());
-    		er.printStackTrace();
-    	}
+    	new Thread(new PrimarySetter(channel, rm)).start();
     }
  
     public void receive(Message msg) {
@@ -113,7 +103,6 @@ public class GroupManagement extends ReceiverAdapter {
         /*
          * Is the following an abuse of Java reflection and of Object Orientation in general? Probably. Do I care? No. No I don't.
          */
-        //TODO: make sure that these messages come from our channel! All except RequestPrimary and ImThe Primary, that is.
         try {
 	        if (obj.getClass().equals(HashtableUpdate.class) && isThisChannel(obj)) { //This is an update to our RM's hashtable
 	        	HashtableUpdate update = (HashtableUpdate)obj;
@@ -145,7 +134,6 @@ public class GroupManagement extends ReceiverAdapter {
 	        else if (obj.getClass().equals(ImThePrimary.class)) {
 	        	if (rm.getClass().equals(Middleware.class)) {
 	        		rm.setPrimary((ImThePrimary)obj);
-	        		waitingForPrimary = false;
 	        	}
 	        }
         }
@@ -201,6 +189,51 @@ public class GroupManagement extends ReceiverAdapter {
     	catch(Exception er) {
     		er.printStackTrace();
     	}
+    	return null;
+    }
+}
+
+class PrimarySetter extends ReceiverAdapter implements Runnable {
+	MiddleResourceManageInt rm;
+	JChannel channel;
+	public PrimarySetter(String connectChannel, MiddleResourceManageInt rm) {
+		try {
+			this.rm = rm;
+			channel = new JChannel();
+			channel.setReceiver(this);
+			channel.connect(connectChannel);
+			channel.send(new Message(null, null, new RequestPrimary(channel.getName())));
+		}
+		catch (Exception er) {
+			er.printStackTrace();
+		}
+	}
+	public void run() {
+		while(true) {
+			try {
+				Thread.sleep(100);
+			}
+			catch (Exception er ) {
+				er.printStackTrace();
+			}
+		}
+	}
+	
+	public void receive(Message msg) {
+		Object obj = msg.getObject();
+		if (obj.getClass().equals(ImThePrimary.class)) {
+			rm.setPrimary((ImThePrimary)obj);
+			channel.close();
+		}
+	}
+	
+    public void setState(byte[] new_state) {
+    	//Do nothing.
+    }
+	
+    public byte[] getState() {
+    	//This method has no state. Do nothing.
+    	System.out.println("AH! It wants my state! I'm just a lowly Primary Setter!! If things get ruined, it's my fault!");
     	return null;
     }
 }

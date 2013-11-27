@@ -105,9 +105,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 		this.gm = gm;
 		while (!gm.isActive);
 		gm.findPrimary(flightsChannel);
-		while (gm.waitingForPrimary);
 		gm.findPrimary(roomsChannel);
-		while (gm.waitingForPrimary);
 		gm.findPrimary(carsChannel);
 	}
 	public void setPrimary(ImThePrimary primary) { 
