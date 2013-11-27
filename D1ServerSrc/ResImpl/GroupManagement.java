@@ -94,6 +94,7 @@ public class GroupManagement extends ReceiverAdapter {
     public void findPrimary(String channel) {
     	JChannel tempChannel = getChannel(channel);
     	try {
+    		System.out.println("Requesting primary from channel " + channel);
     		tempChannel.send(new Message(null, null, new RequestPrimary(this.channel.getName())));
     	}
     	catch (Exception er) {
