@@ -53,8 +53,13 @@ public class ResourceManagerImpl implements ResourceManager, MiddleResourceManag
 			Registry registry = LocateRegistry.getRegistry(port);
 			registry.rebind(binding, rm);
 			
+		// Create and install a security manager
+		if (System.getSecurityManager() == null) {
+			System.setSecurityManager(new RMISecurityManager());
+		}
 			//Set up group management layer
 			obj.setGM(new GroupManagement(obj, binding));
+			//new testing.SimpleChat().start();
 
 			System.err.println("Server ready");
 		} catch (Exception e) {
@@ -62,10 +67,6 @@ public class ResourceManagerImpl implements ResourceManager, MiddleResourceManag
 			e.printStackTrace();
 		}
 
-		// Create and install a security manager
-		if (System.getSecurityManager() == null) {
-			System.setSecurityManager(new RMISecurityManager());
-		}
 	}
 
 	public ResourceManagerImpl() throws RemoteException {

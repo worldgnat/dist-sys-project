@@ -56,7 +56,7 @@ public class SimpleChat extends ReceiverAdapter {
         }
     }
 
-    private void start() throws Exception {
+    public void start() throws Exception {
         channel=new JChannel();
         channel.setReceiver(this);
         channel.connect("ChatCluster");
