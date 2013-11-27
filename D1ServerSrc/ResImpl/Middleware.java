@@ -45,29 +45,16 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 		String server="localhost";
 		int port = 1099;
 
-		// The server names and ports for each RM
-		String serverCars="open-8.cs.mcgill.ca";
-		String serverRooms="open-7.cs.mcgill.ca";
-		String serverFlights="open-9.cs.mcgill.ca";
-		int portCars = 4030;
-		int portRooms = 1030;
-		int portFlights = 2030;
-
 		// Get the server and port for the rmi registry
-
 		if (args.length > 0)
 		{
 			port = Integer.parseInt(args[0]);
-			serverCars = args[1];
-			serverRooms = args[2];
-			serverFlights = args[3];
 		}
 		else
 		{
-			System.out.println ("Usage: java Middleware rmiport serverCars serverRooms serverFlights");
+			System.out.println ("Usage: java Middleware rmiport");
 			System.exit(1);
 		}
-
 
 		try
 		{
@@ -80,11 +67,6 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 
 			//Set up the Middleware group
 			obj.setGM(new GroupManagement(obj, "middleware29"));
-
-			// get the rms for each resource
-			rmFlights = bindRM(serverFlights, portFlights, flightsChannel); //These are NOT JGroups channels, but the channels and bindings have the same names.
-			rmCars = bindRM(serverCars, portCars, carsChannel);
-			rmRooms = bindRM(serverRooms, portRooms, roomsChannel);
 			
 			if( rmCars!=null && rmRooms!=null && rmFlights!=null)
 			{
@@ -93,7 +75,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 			}
 			else
 			{
-				System.out.println("Unsuccessful");
+				System.out.println("Unsuccessful (maybe). Or maybe we're waiting for responses from the primaries.");
 			}
 			// make call on remote method
 		}
@@ -121,8 +103,10 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 	
 	public void setGM(GroupManagement gm) {
 		this.gm = gm;
+		gm.findPrimary(flightsChannel);
+		gm.findPrimary(roomsChannel);
+		gm.findPrimary(carsChannel);
 	}
-	
 	public void setPrimary(ImThePrimary primary) { 
 		try {
 			switch (primary.getChannel()) {
@@ -147,6 +131,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 	 */
 	public static ResourceManager bindRM(String server, int port, String binding) throws RemoteException, NotBoundException {
 		Registry registryFlights = LocateRegistry.getRegistry(server,port);
+		System.out.println("Bound new registry " + binding);
 		return (ResourceManager) registryFlights.lookup(binding);
 	}
 	/*

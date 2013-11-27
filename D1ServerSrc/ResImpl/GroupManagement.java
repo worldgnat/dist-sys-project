@@ -90,6 +90,16 @@ public class GroupManagement extends ReceiverAdapter {
     		}
     	}
     }
+    
+    public void findPrimary(String channel) {
+    	JChannel tempChannel = getChannel(channel);
+    	try {
+    		tempChannel.send(new Message(null, null, new RequestPrimary(this.channel.getName())));
+    	}
+    	catch (Exception er) {
+    		System.err.println("[GM - ERROR] Failed to send primary request to channel " + this.channel.getName());
+    	}
+    }
  
     public void receive(Message msg) {
         Object obj = msg.getObject();
