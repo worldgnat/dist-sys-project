@@ -10,10 +10,12 @@ import groupComm.RequestPrimary;
 import groupComm.StartMessage;
 
 import java.rmi.RemoteException;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.TreeMap;
 
+import org.jgroups.Address;
 import org.jgroups.JChannel;
 import org.jgroups.Message;
 import org.jgroups.ReceiverAdapter;
@@ -22,7 +24,7 @@ import org.jgroups.util.Util;
 
 import ResInterface.MiddleResourceManageInt;
 
-public class GroupManagement extends ReceiverAdapter implements Runnable {
+public class GroupManagement extends ReceiverAdapter {
 	JChannel channel;
 	MiddleResourceManageInt rm;
 	final List<String> state=new LinkedList<String>();
@@ -48,17 +50,6 @@ public class GroupManagement extends ReceiverAdapter implements Runnable {
 		}
 	}
 	
-	public void run() {
-		while (true) {
-			try {
-				Thread.sleep(1);
-			}
-			catch (Exception er) {
-				System.out.println("[GM - ERROR] Thread can't spin. You broke the world.");
-			}
-		}
-	}
-	
 	/*
 	 * Catches changes in the view. This will happen in the case that we have added a group,
 	 * or that the group has decided that a node has failed.
@@ -69,15 +60,15 @@ public class GroupManagement extends ReceiverAdapter implements Runnable {
 	 */
     public void viewAccepted(View new_view) {
         System.out.println("[GM - INFO] New view: " + new_view);
-        //List<Address> members = new_view.getMembers();
+        List<Address> members = new_view.getMembers();
         //The member with the lowest number is, arbitrarily, the primary copy
-       /* Collections.sort(members);
+        Collections.sort(members);
         if (channel.getAddress().equals(members.get(0))) {
         	//Hey, look! We're the primary copy! Let's get this show on the road.
         	System.out.println("[GM - INFO] " + channel.getAddressAsString() + " is officially the king of the " + channel.getName() + "channel now.");
         	primary = true;
         }
-        else primary = false;*/
+        else primary = false;
     }
     
     /*
