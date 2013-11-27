@@ -203,6 +203,7 @@ class PrimarySetter extends ReceiverAdapter implements Runnable {
 			channel = new JChannel();
 			channel.setReceiver(this);
 			channel.connect(connectChannel);
+			channel.getState(null, 10000);
 			//channel.send(new Message(null, null, new RequestPrimary(channel.getName())));
 		}
 		catch (Exception er) {
