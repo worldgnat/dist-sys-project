@@ -34,13 +34,12 @@ public class ResourceManagerImpl implements ResourceManager, MiddleResourceManag
 
 		int port = 1030;
 		String binding = "flights29";
-		String groupName = "";
-
-		if (args.length == 3) {
+		
+		if (args.length == 2) {
 			server = server + ":" + args[0];
 			port = Integer.parseInt(args[0]);
 			binding = args[1].trim();
-			groupName = args[2].trim();
+			
 		} else {
 			System.err.println ("Wrong usage");
 			System.out.println("Usage: java ResImpl.ResourceManagerImpl [port] binding");
@@ -57,20 +56,21 @@ public class ResourceManagerImpl implements ResourceManager, MiddleResourceManag
 			Registry registry = LocateRegistry.getRegistry(port);
 			registry.rebind(binding, rm);
 			
+		// Create and install a security manager
+		if (System.getSecurityManager() == null) {
+			System.setSecurityManager(new RMISecurityManager());
+		}
 			//Set up group management layer
 			//obj.setGM(new GroupManagement(obj, binding));
 			
-
+			obj.setGM(new GroupManagement(obj, binding));
+			//new testing.SimpleChat().start();
 			System.err.println("Server ready");
 		} catch (Exception e) {
 			System.err.println("Server exception: " + e.toString());
 			e.printStackTrace();
 		}
 
-		// Create and install a security manager
-		if (System.getSecurityManager() == null) {
-			System.setSecurityManager(new RMISecurityManager());
-		}
 	}
 
 	public ResourceManagerImpl(int port, String binding) throws RemoteException {

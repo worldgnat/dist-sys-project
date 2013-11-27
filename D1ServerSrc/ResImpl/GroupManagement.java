@@ -11,6 +11,9 @@ import groupComm.StartMessage;
 import java.rmi.RemoteException;
 import java.util.Collections;
 import java.util.List;
+import java.util.LinkedList;
+
+import java.io.*;
 
 import org.jgroups.Address;
 import org.jgroups.JChannel;
@@ -24,25 +27,45 @@ import ResInterface.MiddleResourceManageInt;
 public class GroupManagement extends ReceiverAdapter {
 	JChannel channel;
 	MiddleResourceManageInt rm;
-	
+	    final List<String> state=new LinkedList<String>();
+String user_name=System.getProperty("user.name", "n/a");
+
 	boolean primary = false;
 	boolean atMiddleware;
-		
+	/*	
 	public GroupManagement(MiddleResourceManageInt rm, String channelName) {
 		this.rm = rm;
 		atMiddleware = (rm.getClass().equals(Middleware.class));
 		try {
 			//Create the connection to the channel for this RM's group.
 			channel=new JChannel();
+			System.out.println("Test 1");
 	        channel.setReceiver(this);
+			System.out.println("Test 2");
 	        channel.connect(channelName);
+			System.out.println("Test 3");
 	        channel.getState(null, 10000);
+			System.out.println("Test 4");
 		}
 		catch(Exception er) {
-			System.err.println(er.toString());
+			er.printStackTrace();
 			System.err.println("[GM - ERROR] Couldn't create the connection to the JChannel.");
 		}
+	}*/
+	public GroupManagement(MiddleResourceManageInt rm, String channelName) {
+		try {
+		start();
+		}catch (Exception er ) { er.printStackTrace(); }
 	}
+	public void sendUpdates(Object o) {}
+    private void start() throws Exception {
+        channel=new JChannel();
+        channel.setReceiver(this);
+        channel.connect("cars29");
+        channel.getState(null, 10000);
+       eventLoop();
+//        channel.close();
+    }
 	
 	/*
 	 * Catches changes in the view. This will happen in the case that we have added a group,
@@ -54,15 +77,34 @@ public class GroupManagement extends ReceiverAdapter {
 	 */
     public void viewAccepted(View new_view) {
         System.out.println("[GM - INFO] New view: " + new_view);
-        List<Address> members = new_view.getMembers();
+        //List<Address> members = new_view.getMembers();
+			System.out.println("Test 5");
+
         //The member with the lowest number is, arbitrarily, the primary copy
-        Collections.sort(members);
+       /* Collections.sort(members);
         if (channel.getAddress().equals(members.get(0))) {
         	//Hey, look! We're the primary copy! Let's get this show on the road.
         	System.out.println("[GM - INFO] " + channel.getAddressAsString() + " is officially the king of the " + channel.getName() + "channel now.");
         	primary = true;
         }
-        else primary = false;
+        else primary = false;*/
+    }
+    private void eventLoop() {
+        BufferedReader in=new BufferedReader(new InputStreamReader(System.in));
+        while(true) {
+            try {
+                System.out.print("> "); System.out.flush();
+                String line=in.readLine().toLowerCase();
+                if(line.startsWith("quit") || line.startsWith("exit")) {
+                    break;
+                }
+                line="[" + user_name + "] " + line;
+                Message msg=new Message(null, null, line);
+                channel.send(msg);
+            }
+            catch(Exception e) {
+            }
+        }
     }
     
     /*
@@ -70,7 +112,7 @@ public class GroupManagement extends ReceiverAdapter {
      * If this is the primary copy, it will multicast the message to the rest of the group.
      * If not, it will do nothing.
      */
-    public void sendUpdates(RMMessage update) {
+    /*public void sendUpdates(RMMessage update) {
     	if (primary) { 
     		try {
     			Message msg = new Message(null, null, update);
@@ -81,13 +123,21 @@ public class GroupManagement extends ReceiverAdapter {
     			er.printStackTrace();
     		}
     	}
-    }
-    
+    }*/
+    public void receive(Message msg) {
+        String line=msg.getSrc() + ": " + msg.getObject();
+        System.out.println(line);
+        synchronized(state) {
+            state.add(line);
+        }
+    }   
+/* 
     public void receive(Message msg) {
         Object obj = msg.getObject();
         /*
          * Is the following an abuse of Java reflection and of Object Orientation in general? Probably. Do I care? No. No I don't.
          */
+/*
         try {
 	        if (obj.getClass().equals(HashtableUpdate.class)) { //This is an update to our RM's hashtable
 	        	HashtableUpdate update = (HashtableUpdate)obj;
@@ -117,7 +167,8 @@ public class GroupManagement extends ReceiverAdapter {
         	System.err.println("[GM - ERROR] Invalid transaction received.");
         }
     }
-    
+    */
+/*
     public void setState(byte[] new_state) {
     	try {
             rm =(ResourceManagerImpl)Util.objectFromByteBuffer(new_state);
@@ -126,11 +177,27 @@ public class GroupManagement extends ReceiverAdapter {
         catch(Exception e) {
             e.printStackTrace();
         }
+    }*/
+    public void setState(byte[] new_state) {
+        try {
+            List<String> list=(List<String>)Util.objectFromByteBuffer(new_state);
+            synchronized(state) {
+                state.clear();
+                state.addAll(list);
+            }
+            System.out.println("received state (" + list.size() + " messages in chat history):");
+            for(String str: list) {
+                System.out.println(str);
+            }
+        }
+        catch(Exception e) {
+            e.printStackTrace();
+        }
     }
     
     /*
      * 
-     */
+     
     public byte[] getState() {
     	try {
 	    	synchronized(rm) {
@@ -141,5 +208,16 @@ public class GroupManagement extends ReceiverAdapter {
     		er.printStackTrace();
     	}
     	return null;
+    }*/
+    public byte[] getState() {
+        synchronized(state) {
+            try {
+                return Util.objectToByteBuffer(state);
+            }
+            catch(Exception e) {
+                e.printStackTrace();
+                return null;
+            }
+        }
     }
 }
