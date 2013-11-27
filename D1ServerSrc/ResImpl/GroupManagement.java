@@ -60,7 +60,7 @@ public class GroupManagement extends ReceiverAdapter {
 	 */
     public void viewAccepted(View new_view) {
         System.out.println("[GM - INFO] New view: " + new_view);
-        List<Address> members = new_view.getMembers();
+        List<Address> members = new LinkedList<Address>(new_view.getMembers());
         //The member with the lowest number is, arbitrarily, the primary copy
         Collections.sort(members);
         if (channel.getAddress().equals(members.get(0))) {
