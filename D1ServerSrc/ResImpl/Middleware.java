@@ -86,7 +86,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 		}
 
 		if (System.getSecurityManager() == null) {
-			System.setSecurityManager(new RMISecurityManager());
+			//System.setSecurityManager(new RMISecurityManager());
 		}
 
 
