@@ -33,6 +33,7 @@ public class GroupManagement extends ReceiverAdapter {
 
 	boolean primary = false;
 	boolean atMiddleware;
+	boolean isActive = false;
 	
 	public GroupManagement(MiddleResourceManageInt rm, String channelName) {
 		this.rm = rm;
@@ -61,6 +62,7 @@ public class GroupManagement extends ReceiverAdapter {
 	 */
     public void viewAccepted(View new_view) {
         System.out.println("[GM - INFO] New view: " + new_view);
+        if (!isActive) isActive = true; //If this is the first new view we've gotten, then let everyone know we're up and running!
         List<Address> members = new ArrayList<Address>();
         members.addAll(new_view.getMembers());
         //The member with the lowest number is, arbitrarily, the primary copy
