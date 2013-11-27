@@ -68,7 +68,7 @@ public class ResourceManagerImpl implements ResourceManager, MiddleResourceManag
 		}
 		// Create and install a security manager
 		if (System.getSecurityManager() == null) {
-			System.setSecurityManager(new RMISecurityManager());
+			//System.setSecurityManager(new RMISecurityManager());
 		}
 	}
 
