@@ -2,6 +2,7 @@ package ResInterface;
 
 import java.rmi.RemoteException;
 
+import ResImpl.RMHashtable;
 import ResImpl.RMItem;
 import exceptions.InvalidTransactionException;
 import exceptions.TransactionAbortedException;
@@ -14,6 +15,7 @@ import groupComm.ImThePrimary;
  * to an entire cluster of Middlewares or ResourceManagerImpls
  */
 public interface MiddleResourceManageInt {
+	RMHashtable m_itemHT = null;
 	public void start(int tid) throws RemoteException;
 	public void commit(int tid) throws RemoteException,InvalidTransactionException,TransactionAbortedException;
 	public void abort(int tid)  throws RemoteException, InvalidTransactionException;;

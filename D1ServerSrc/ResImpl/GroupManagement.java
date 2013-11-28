@@ -91,6 +91,7 @@ public class GroupManagement extends ReceiverAdapter {
         	if (!rm.getClass().equals(Middleware.class)) notifyPrimary();
         }
         else primary = false;
+        System.out.println("RM entry size: " + rm.m_itemHT.size());
     }
     
     /*
