@@ -110,7 +110,7 @@ public class GroupManagement extends ReceiverAdapter {
     	try {
     		JChannel midChannel = getChannel("middleware29");
     		Message msg = new Message(null, null, new ImThePrimary(java.net.InetAddress.getLocalHost().getCanonicalHostName(), rm.getPort(), channel.getClusterName()));
-        	disp.castMessage(null, msg, new RequestOptions(ResponseMode.GET_ALL, 0));
+        	disp.castMessage(null, msg, new RequestOptions(ResponseMode.GET_FIRST, 0));
         	midChannel.close();
     	}
     	catch (Exception er) {
