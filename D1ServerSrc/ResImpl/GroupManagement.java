@@ -21,6 +21,8 @@ import org.jgroups.JChannel;
 import org.jgroups.Message;
 import org.jgroups.ReceiverAdapter;
 import org.jgroups.View;
+import org.jgroups.blocks.MessageDispatcher;
+import org.jgroups.blocks.ResponseMode;
 import org.jgroups.util.Util;
 
 import ResInterface.MiddleResourceManageInt;
@@ -33,6 +35,7 @@ public class GroupManagement extends ReceiverAdapter {
 	
 	TreeMap<String, String> configs = new TreeMap<String, String>();
 	
+	MessageDispatcher disp;
 
 	boolean primary = false;
 	boolean atMiddleware;
@@ -51,9 +54,11 @@ public class GroupManagement extends ReceiverAdapter {
 			System.out.println(channelName);
 			channel=new JChannel(configs.get(channelName));
 	        channel.setReceiver(this);
+			//disp = new MessageDispatcher(channel, this, this);
 	        channel.connect(channelName);
 	        channel.getState(null, 10000);
 	        channel.setDiscardOwnMessages(true); //I love JGroups. I really do.
+	        
 		}
 		catch(Exception er) {
 			er.printStackTrace();
@@ -94,6 +99,7 @@ public class GroupManagement extends ReceiverAdapter {
     		try {
     			Message msg = new Message(null, null, update);
     			channel.send(msg);
+    			//disp.castMessage(null, msg, ResponseMode.GET_ALL, 0);
     		}
     		catch(Exception er ) {
     			System.err.println("[GM - ERROR] Error sending message to the group.");
@@ -103,7 +109,7 @@ public class GroupManagement extends ReceiverAdapter {
     }
     
     public void findPrimary(String channel) {
-    	new Thread(new PrimarySetter(channel, rm, configs.get(channel))).start();
+    	new Thread(new PrimarySetter(channel, rm, configs.get(channel), System.getProperty("jgroups.bind_addr"))).start();
     }
  
     public void receive(Message msg) {
@@ -205,7 +211,9 @@ public class GroupManagement extends ReceiverAdapter {
 class PrimarySetter extends ReceiverAdapter implements Runnable {
 	MiddleResourceManageInt rm;
 	JChannel channel;
-	public PrimarySetter(String connectChannel, MiddleResourceManageInt rm, String config) {
+	public PrimarySetter(String connectChannel, MiddleResourceManageInt rm, String config, String ip) {
+		System.setProperty("java.net.preferIPv4Stack", "true");
+		System.setProperty("jgroups.bind_addr=", ip);
 		try {
 			this.rm = rm;
 			System.out.println("[Primary Setter] Connecting to " + connectChannel);
