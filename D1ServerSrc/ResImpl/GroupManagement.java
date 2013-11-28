@@ -157,6 +157,7 @@ public class GroupManagement extends ReceiverAdapter {
 	        		}
 	        		catch (Exception er ) {
 	        			System.err.println("[GM - ERROR] Failed to connect to middleware to notify of primary status.");
+	        			er.printStackTrace();
 	        		}
 	        	}
 	        }
