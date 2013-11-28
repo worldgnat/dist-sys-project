@@ -60,8 +60,8 @@ public class GroupManagement extends ReceiverAdapter {
 	        channel.setReceiver(this);
 			//disp = new MessageDispatcher(channel, this, this);
 	        channel.connect(channelName);
-	        channel.getState(null, 10000);
 	        channel.setDiscardOwnMessages(true); //I love JGroups. I really do.
+	        channel.getState(null, 10000);
 		}
 		catch(Exception er) {
 			er.printStackTrace();
@@ -131,26 +131,31 @@ public class GroupManagement extends ReceiverAdapter {
          * Is the following an abuse of Java reflection and of Object Orientation in general? Probably. Do I care? No. No I don't.
          */
         try {
-	        if (obj.getClass().equals(HashtableUpdate.class)) { //This is an update to our RM's hashtable
-	        	HashtableUpdate update = (HashtableUpdate)obj;
-	        	if (update.getValue() == null) { //This is a removal
-	        		rm.removeData(update.getTid(), update.getKey());
-	        	}
-	        	else rm.writeData(update.getTid(), update.getKey(), update.getValue());
-	        }
-	        else if (obj.getClass().equals(StartMessage.class)) {
-	        	rm.start(((StartMessage)obj).getTid());
-	        }
-	        else if (obj.getClass().equals(CommitMessage.class)) {
-	        	rm.commit(((CommitMessage)obj).getTid());
-	        }
-	        else if (obj.getClass().equals(AbortMessage.class)) {
-	        	rm.abort(((AbortMessage)obj).getTid());
-	        }
-	        else if (obj.getClass().equals(ImThePrimary.class)) {
-	        	ImThePrimary message = (ImThePrimary)obj;
-	        	rm.setPrimary(message.getHostname(), message.getPort(), message.getChannel());
-	        }
+        	if (rm != null) {
+		        if (obj.getClass().equals(HashtableUpdate.class)) { //This is an update to our RM's hashtable
+		        	HashtableUpdate update = (HashtableUpdate)obj;
+		        	if (update.getValue() == null) { //This is a removal
+		        		rm.removeData(update.getTid(), update.getKey());
+		        	}
+		        	else rm.writeData(update.getTid(), update.getKey(), update.getValue());
+		        }
+		        else if (obj.getClass().equals(StartMessage.class)) {
+		        	rm.start(((StartMessage)obj).getTid());
+		        }
+		        else if (obj.getClass().equals(CommitMessage.class)) {
+		        	rm.commit(((CommitMessage)obj).getTid());
+		        }
+		        else if (obj.getClass().equals(AbortMessage.class)) {
+		        	rm.abort(((AbortMessage)obj).getTid());
+		        }
+		        else if (obj.getClass().equals(ImThePrimary.class)) {
+		        	ImThePrimary message = (ImThePrimary)obj;
+		        	rm.setPrimary(message.getHostname(), message.getPort(), message.getChannel());
+		        }
+        	}
+        	else {
+        		System.err.println("[GM - ERROR] Resource manager has not been initialized.");
+        	}
         }
         catch(RemoteException er) {
         	System.err.println("[GM - ERROR] Problem running message on RM.");
