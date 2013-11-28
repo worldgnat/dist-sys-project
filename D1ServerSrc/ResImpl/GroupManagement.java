@@ -62,7 +62,6 @@ public class GroupManagement extends ReceiverAdapter {
 	        channel.connect(channelName);
 	        channel.getState(null, 10000);
 	        channel.setDiscardOwnMessages(true); //I love JGroups. I really do.
-	        notifyPrimary();
 		}
 		catch(Exception er) {
 			er.printStackTrace();
@@ -89,14 +88,7 @@ public class GroupManagement extends ReceiverAdapter {
         	//Hey, look! We're the primary copy! Let's get this show on the road.
         	System.out.println("[GM - INFO] " + channel.getAddressAsString() + " is officially the king of the " + channel.getName() + "channel now.");
         	primary = true;
-        	try {
-        		JChannel midChannel = getChannel("middleware29");
-	        	midChannel.send(new Message(null, null, new ImThePrimary(java.net.InetAddress.getLocalHost().getCanonicalHostName(), rm.getPort(), channel.getName())));
-	        	midChannel.close();
-        	}
-        	catch (Exception er) {
-        		System.err.println("[GM - ERROR] Failed to notify Middleware of primary status.");
-        	}
+        	if (!rm.getClass().equals(Middleware.class)) notifyPrimary();
         }
         else primary = false;
     }
