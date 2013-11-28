@@ -48,8 +48,8 @@ public class GroupManagement extends ReceiverAdapter {
 		configs.put("middleware29", "middleware_udp.xml");
 		try {
 			//Create the connection to the channel for this RM's group.
-			channel=new JChannel(configs.get(channel));
 			System.out.println(channel);
+			channel=new JChannel(configs.get(channel));
 	        channel.setReceiver(this);
 	        channel.connect(channelName);
 	        channel.getState(null, 10000);
@@ -178,6 +178,7 @@ public class GroupManagement extends ReceiverAdapter {
     			tempChannel = new JChannel(configs.get(channel));
     			tempChannel.setReceiver(this);
     			tempChannel.connect(channel);
+    			openChannels.put(channel, tempChannel);
     		}
     		catch (Exception er ) {
     			System.err.println("[GM - ERROR] Failed to connect to channel " + channel);
