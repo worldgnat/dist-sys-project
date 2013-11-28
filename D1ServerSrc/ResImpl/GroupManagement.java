@@ -147,6 +147,7 @@ public class GroupManagement extends ReceiverAdapter {
 	        else if (obj.getClass().equals(ImThePrimary.class)) {
 	        	if (rm.getClass().equals(Middleware.class)) {
 	        		rm.setPrimary((ImThePrimary)obj);
+	        		System.out.println("Got a response from " + ((ImThePrimary)obj).getChannel());
 	        	}
 	        }
         }
