@@ -223,6 +223,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 				while (!success) {
 					try {
 						rmRooms.start(tid);
+						success = true;
 					}
 					catch (ConnectException er) {
 						System.out.println("Cannot connect to Rooms RM");
@@ -242,6 +243,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 		while(!success) {
 			try {
 				rmFlights.commit(tid);
+				success = true;
 			}
 			catch (ConnectException er) {
 				System.out.println("Cannot connect to Rooms RM");
@@ -251,6 +253,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 		while(!success) {
 			try {
 				rmCars.commit(tid);
+				success = true;
 			}
 			catch (ConnectException er) {
 				System.out.println("Cannot connect to Rooms RM");
@@ -260,6 +263,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 		while(!success) {
 			try {
 				rmRooms.commit(tid);
+				success = true;
 			}
 			catch (ConnectException er) {
 				System.out.println("Cannot connect to Rooms RM");
@@ -316,6 +320,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 		while(!success) {
 			try {
 				rmFlights.abort(tid);
+				success = true;
 			}
 			catch (ConnectException er) {
 				System.out.println("Cannot connect to Rooms RM");
@@ -325,6 +330,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 		while(!success) {
 			try {
 				rmCars.abort(tid);
+				success = true;
 			}
 			catch (ConnectException er) {
 				System.out.println("Cannot connect to Rooms RM");
@@ -334,6 +340,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 		while(!success) {
 			try {
 				rmRooms.abort(tid);
+				success = true;
 			}
 			catch (ConnectException er) {
 				System.out.println("Cannot connect to Rooms RM");
@@ -369,6 +376,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 			while(!success) {
 				try {
 					rmFlights.addFlight(id,flightNum,flightSeats,flightPrice);
+					success = true;
 				}
 				catch (ConnectException er) {
 					System.out.println("Cannot connect to Rooms RM");
@@ -472,6 +480,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 			while(!success) {
 				try {
 					result = rmFlights.reserveFlight(id,customerID,flightNum);
+					success = true;
 				}
 				catch (ConnectException er) {
 					System.out.println("Cannot connect to Rooms RM");
@@ -648,6 +657,7 @@ return true;
 						while(!success) {
 							try {
 								result = rmCars.reserveCar(id,customerID,location);
+								success = true;
 							}
 							catch (ConnectException er) {
 								System.out.println("Cannot connect to Rooms RM");
@@ -787,6 +797,7 @@ return true;
 			while(!success) {
 				try {
 					result = rmRooms.reserveRoom(id,customerID,location);
+					success = true;
 				}
 				catch (ConnectException er) {
 					System.out.println("Cannot connect to Rooms RM");
