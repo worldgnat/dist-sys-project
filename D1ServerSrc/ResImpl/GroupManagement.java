@@ -6,9 +6,13 @@ import groupComm.CommitMessage;
 import groupComm.HashtableUpdate;
 import groupComm.ImThePrimary;
 import groupComm.RMMessage;
+import groupComm.RequestPrimary;
 import groupComm.StartMessage;
 
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -21,11 +25,12 @@ import org.jgroups.Message;
 import org.jgroups.ReceiverAdapter;
 import org.jgroups.View;
 import org.jgroups.blocks.MessageDispatcher;
-import org.jgroups.blocks.RequestOptions;
 import org.jgroups.blocks.ResponseMode;
 import org.jgroups.util.Util;
 
 import ResInterface.MiddleResourceManageInt;
+import ResInterface.MiddlewareInt;
+import ResInterface.ResourceManager;
 
 public class GroupManagement extends ReceiverAdapter {
 	JChannel channel;
@@ -53,6 +58,7 @@ public class GroupManagement extends ReceiverAdapter {
 			System.out.println(channelName);
 			channel=new JChannel(configs.get(channelName));
 	        channel.setReceiver(this);
+			disp = new MessageDispatcher(channel, this, this);
 	        channel.connect(channelName);
 	        channel.setDiscardOwnMessages(true); //I love JGroups. I really do.
 	        channel.getState(null, 10000);
@@ -109,9 +115,10 @@ public class GroupManagement extends ReceiverAdapter {
     public void notifyPrimary() {
     	try {
     		JChannel midChannel = getChannel("middleware29");
-    		Message msg = new Message(null, null, new ImThePrimary(java.net.InetAddress.getLocalHost().getCanonicalHostName(), rm.getPort(), channel.getClusterName()));
-        	disp.castMessage(null, msg, new RequestOptions(ResponseMode.GET_FIRST, 0));
+        	midChannel.send(new Message(null, null, new ImThePrimary(java.net.InetAddress.getLocalHost().getCanonicalHostName(), rm.getPort(), channel.getClusterName())));
+        	Thread.sleep(100); //This is a horrible solution... but it's past my bedtime.
         	midChannel.close();
+        	openChannels.remove("middleware29");
     	}
     	catch (Exception er) {
     		System.err.println("[GM - ERROR] Failed to notify Middleware of primary status.");
@@ -179,7 +186,6 @@ public class GroupManagement extends ReceiverAdapter {
     		try {
     			tempChannel = new JChannel(configs.get(channelName));
     			//tempChannel.setReceiver(this);
-    			disp = new MessageDispatcher(channel, this, this);
     			tempChannel.connect(channelName);
     			openChannels.put(channelName, tempChannel);
     		}
