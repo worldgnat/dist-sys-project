@@ -48,8 +48,8 @@ public class GroupManagement extends ReceiverAdapter {
 		configs.put("middleware29", "middleware_udp.xml");
 		try {
 			//Create the connection to the channel for this RM's group.
-			System.out.println(channel);
-			channel=new JChannel(configs.get(channel));
+			System.out.println(channelName);
+			channel=new JChannel(configs.get(channelName));
 	        channel.setReceiver(this);
 	        channel.connect(channelName);
 	        channel.getState(null, 10000);
