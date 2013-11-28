@@ -10,6 +10,9 @@ import groupComm.RequestPrimary;
 import groupComm.StartMessage;
 
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -26,6 +29,8 @@ import org.jgroups.blocks.ResponseMode;
 import org.jgroups.util.Util;
 
 import ResInterface.MiddleResourceManageInt;
+import ResInterface.MiddlewareInt;
+import ResInterface.ResourceManager;
 
 public class GroupManagement extends ReceiverAdapter {
 	JChannel channel;
@@ -108,7 +113,15 @@ public class GroupManagement extends ReceiverAdapter {
     }
     
     public void findPrimary(String channel) {
-    	new Thread(new PrimarySetter(channel, rm, configs.get(channel))).start();
+    	//new Thread(new PrimarySetter(channel, rm, configs.get(channel))).start();
+    	JChannel tempChannel = getChannel(channel);
+    	try {
+	    	tempChannel.send(new Message(null, null, new RequestPrimary(java.net.InetAddress.getLocalHost().getCanonicalHostName(), rm.getPort())));
+	    	tempChannel.close();
+    	}
+    	catch(Exception er) {
+    		System.err.println("[GM - ERROR] Can't send find primary request.");
+    	}
     }
  
     public void receive(Message msg) {
@@ -134,20 +147,17 @@ public class GroupManagement extends ReceiverAdapter {
 	        	rm.abort(((AbortMessage)obj).getTid());
 	        }
 	        else if (obj.getClass().equals(RequestPrimary.class)) {
+	        	RequestPrimary request = (RequestPrimary)obj;
 	        	if (primary) {
-	        		JChannel responseChannel = getChannel(((RequestPrimary)obj).getResponseChannel());
-	        		try {
-	        			responseChannel.send(new Message(null, null, new ImThePrimary(java.net.InetAddress.getLocalHost().getCanonicalHostName(), rm.getPort(), channel.getName())));
+	        		try { 
+		        		//Bind to RMI and send a message.
+		        		Registry registry = LocateRegistry.getRegistry(request.getHostname(), request.getPort());
+		        		Middleware notify = (Middleware) registry.lookup("middleware29");
+		        		notify.setPrimary(java.net.InetAddress.getLocalHost().getCanonicalHostName(), rm.getPort(), channel.getName());
 	        		}
 	        		catch (Exception er ) {
-	        			System.err.println("[GM - ERROR] Unable to determine hostname or send ImThePrimary response message.");
+	        			System.err.println("[GM - ERROR] Failed to connect to middleware to notify of primary status.");
 	        		}
-	        	}
-	        }
-	        else if (obj.getClass().equals(ImThePrimary.class)) {
-	        	if (rm.getClass().equals(Middleware.class)) {
-	        		rm.setPrimary((ImThePrimary)obj);
-	        		System.out.println("Got a response from " + ((ImThePrimary)obj).getChannel());
 	        	}
 	        }
         }
@@ -182,7 +192,7 @@ public class GroupManagement extends ReceiverAdapter {
     	if (!openChannels.containsKey(channel)) {
     		try {
     			tempChannel = new JChannel(configs.get(channel));
-    			tempChannel.setReceiver(this);
+    			//tempChannel.setReceiver(this);
     			tempChannel.connect(channel);
     			openChannels.put(channel, tempChannel);
     		}
@@ -208,56 +218,56 @@ public class GroupManagement extends ReceiverAdapter {
     }
 }
 
-class PrimarySetter extends ReceiverAdapter implements Runnable {
-	MiddleResourceManageInt rm;
-	JChannel channel;
-	public PrimarySetter(String connectChannel, MiddleResourceManageInt rm, String config) {
-		try {
-			this.rm = rm;
-			System.out.println("[Primary Setter] Connecting to " + connectChannel);
-			channel = new JChannel(config);
-			channel.setReceiver(this);
-			channel.connect(connectChannel);
-			channel.getState(null, 10000);
-			channel.send(new Message(null, null, new RequestPrimary(channel.getName())));
-		}
-		catch (Exception er) {
-			er.printStackTrace();
-		}
-	}
-	public void run() {
-		while(true) {
-			try {
-				Thread.sleep(100);
-			}
-			catch (Exception er ) {
-				er.printStackTrace();
-			}
-		}
-	}
-	
-	public void viewAccepted(View new_view) {
-		System.out.println("[Primary Setter] We've received the new view! We're _cool_!");
-		System.out.println(new_view);
-	}
-	
-	public void receive(Message msg) {
-		Object obj = msg.getObject();
-		if (obj.getClass().equals(ImThePrimary.class)) {
-			rm.setPrimary((ImThePrimary)obj);
-			channel.close();
-		}
-	}
-	
-    public void setState(byte[] new_state) {
-    	//Do nothing.
-    }
-	
-    public byte[] getState() {
-    	//This method has no state. Do nothing.
-    	System.out.println("AH! It wants my state! I'm just a lowly Primary Setter!! If things get ruined, it's my fault!");
-    	return null;
-    }
-}
+//class PrimarySetter extends ReceiverAdapter implements Runnable {
+//	MiddleResourceManageInt rm;
+//	JChannel channel;
+//	public PrimarySetter(String connectChannel, MiddleResourceManageInt rm, String config) {
+//		try {
+//			this.rm = rm;
+//			System.out.println("[Primary Setter] Connecting to " + connectChannel);
+//			channel = new JChannel(config);
+//			channel.setReceiver(this);
+//			channel.connect(connectChannel);
+//			channel.getState(null, 10000);
+//			channel.send(new Message(null, null, new RequestPrimary(channel.getName())));
+//		}
+//		catch (Exception er) {
+//			er.printStackTrace();
+//		}
+//	}
+//	public void run() {
+//		while(true) {
+//			try {
+//				Thread.sleep(100);
+//			}
+//			catch (Exception er ) {
+//				er.printStackTrace();
+//			}
+//		}
+//	}
+//	
+//	public void viewAccepted(View new_view) {
+//		System.out.println("[Primary Setter] We've received the new view! We're _cool_!");
+//		System.out.println(new_view);
+//	}
+//	
+//	public void receive(Message msg) {
+//		Object obj = msg.getObject();
+//		if (obj.getClass().equals(ImThePrimary.class)) {
+//			rm.setPrimary((ImThePrimary)obj);
+//			channel.close();
+//		}
+//	}
+//	
+//    public void setState(byte[] new_state) {
+//    	//Do nothing.
+//    }
+//	
+//    public byte[] getState() {
+//    	//This method has no state. Do nothing.
+//    	System.out.println("AH! It wants my state! I'm just a lowly Primary Setter!! If things get ruined, it's my fault!");
+//    	return null;
+//    }
+//}
 
     

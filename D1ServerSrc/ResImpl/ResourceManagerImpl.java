@@ -107,7 +107,7 @@ public class ResourceManagerImpl implements ResourceManager, MiddleResourceManag
 	public int getPort() { return port; }
 	public String getBinding() { return binding; }
 	
-	public void setPrimary(ImThePrimary primary) { 
+	public void setPrimary(String hostname, int port, String type) { 
 		//Do nothing. This method is for the Middleware.
 	}
 

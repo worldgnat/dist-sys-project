@@ -21,7 +21,7 @@ public interface MiddleResourceManageInt {
 	public void writeData(int tid, String key, RMItem value);
 	public RMItem removeData(int tid, String key);
 	
-	public void setPrimary(ImThePrimary primary);
+	public void setPrimary(String hostname, int port, String type);
 	
 	public int getPort();
 	public String getBinding();

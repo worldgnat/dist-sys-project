@@ -108,17 +108,17 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 		gm.findPrimary(roomsChannel);
 		gm.findPrimary(carsChannel);
 	}
-	public void setPrimary(ImThePrimary primary) { 
+	public void setPrimary(String hostname, int port, String type) { 
 		try {
-			switch (primary.getChannel()) {
+			switch (type) {
 			case "flights29":
-				rmFlights = bindRM(primary.getHostname(), primary.getPort(), primary.getChannel());
+				rmFlights = bindRM(hostname, port, type);
 				break;
 			case "rooms29":
-				rmRooms = bindRM(primary.getHostname(), primary.getPort(), primary.getChannel());
+				rmRooms = bindRM(hostname, port, type);
 				break;
 			case "cars29":
-				rmCars = bindRM(primary.getHostname(), primary.getPort(), primary.getChannel());
+				rmCars = bindRM(hostname, port, type);
 				break;
 			}
 		}
