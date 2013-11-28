@@ -41,7 +41,6 @@ public class GroupManagement extends ReceiverAdapter {
 	boolean atMiddleware;
 	boolean isActive = false;
 	
-	
 	public GroupManagement(MiddleResourceManageInt rm, String channelName) {
 		this.rm = rm;
 		atMiddleware = (rm.getClass().equals(Middleware.class));
@@ -109,7 +108,7 @@ public class GroupManagement extends ReceiverAdapter {
     }
     
     public void findPrimary(String channel) {
-    	new Thread(new PrimarySetter(channel, rm, configs.get(channel), System.getProperty("jgroups.bind_addr"))).start();
+    	new Thread(new PrimarySetter(channel, rm, configs.get(channel))).start();
     }
  
     public void receive(Message msg) {
@@ -211,9 +210,7 @@ public class GroupManagement extends ReceiverAdapter {
 class PrimarySetter extends ReceiverAdapter implements Runnable {
 	MiddleResourceManageInt rm;
 	JChannel channel;
-	public PrimarySetter(String connectChannel, MiddleResourceManageInt rm, String config, String ip) {
-		System.setProperty("java.net.preferIPv4Stack", "true");
-		System.setProperty("jgroups.bind_addr=", ip);
+	public PrimarySetter(String connectChannel, MiddleResourceManageInt rm, String config) {
 		try {
 			this.rm = rm;
 			System.out.println("[Primary Setter] Connecting to " + connectChannel);
@@ -221,7 +218,7 @@ class PrimarySetter extends ReceiverAdapter implements Runnable {
 			channel.setReceiver(this);
 			channel.connect(connectChannel);
 			channel.getState(null, 10000);
-			//channel.send(new Message(null, null, new RequestPrimary(channel.getName())));
+			channel.send(new Message(null, null, new RequestPrimary(channel.getName())));
 		}
 		catch (Exception er) {
 			er.printStackTrace();
