@@ -116,7 +116,7 @@ public class GroupManagement extends ReceiverAdapter {
     	try {
     		JChannel midChannel = getChannel("middleware29");
         	midChannel.send(new Message(null, null, new ImThePrimary(java.net.InetAddress.getLocalHost().getCanonicalHostName(), rm.getPort(), channel.getClusterName())));
-        	Thread.sleep(100); //This is a horrible solution... but it's past my bedtime.
+        	Thread.sleep(1000); //This is a horrible solution... but it's past my bedtime.
         	midChannel.close();
     	}
     	catch (Exception er) {
