@@ -9,5 +9,8 @@ public class ClassComparrisonTest {
 		if (test.getClass().equals(Integer.class)) {
 			System.err.println("Something is dumb, and it's probably Java.");
 		}
+		int f = 4;
+		System.out.println("f: " + (f<<4));
+		System.out.println("f: " + f);
 	}
 }

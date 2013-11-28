@@ -5,21 +5,21 @@ import exceptions.TransactionAbortedException;
 import groupComm.AbortMessage;
 import groupComm.CommitMessage;
 import groupComm.HashtableUpdate;
-import groupComm.ImThePrimary;
 import groupComm.StartMessage;
 
 import java.rmi.ConnectException;
 import java.rmi.NotBoundException;
-import java.rmi.RMISecurityManager;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.Calendar;
+import java.util.LinkedList;
 import java.util.Queue;
 import java.util.TreeMap;
 import java.util.Vector;
 
+import ResInterface.ClientMidClock;
 import ResInterface.MiddleResourceManageInt;
 import ResInterface.MiddlewareInt;
 import ResInterface.ResourceManager;
@@ -32,9 +32,12 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 	protected static ResourceManager rmFlights = null; // RM for the flights
 	protected TransactionManager tM;
 	protected TreeMap<Integer, TemporaryHT> openTransactions = new TreeMap<Integer, TemporaryHT>();
+	LinkedList<ClientMidClock> received = new LinkedList<ClientMidClock>();
+	
 	GroupManagement gm;
 	int port;
 	String binding;
+	ClientMidClock clock;
 	
 	//These are the names of the RM JGroups.
 	final static String flightsChannel = "flights29";
@@ -44,7 +47,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 	public static void main(String args[]) {
 		String server="localhost";
 		int port = 1099;
-
+		
 		// Get the server and port for the rmi registry
 		if (args.length > 0)
 		{
@@ -67,17 +70,6 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 
 			//Set up the Middleware group
 			obj.setGM(new GroupManagement(obj, "middleware29"));
-			
-			if( rmCars!=null && rmRooms!=null && rmFlights!=null)
-			{
-				System.out.println("Successful");
-				System.out.println("Connected to RMs");
-			}
-			else
-			{
-				System.out.println("Unsuccessful (maybe). Or maybe we're waiting for responses from the primaries.");
-			}
-			// make call on remote method
 		}
 		catch (Exception e)
 		{
@@ -96,6 +88,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 		tM = new ResImpl.TransactionManager(this);
 		this.port = port;
 		this.binding = binding;
+		clock = new ClientMidClock("middleware29");
 	}
 	
 	public int getPort() { return port; }
@@ -157,7 +150,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 	}
 
 	// Writes a data item
-	public void writeData(int id, String key, RMItem value)
+	public void writeData(int id, String key, RMItem value, ClientMidClock clock)
 	{
 		synchronized(openTransactions) {
 			// m_itemHT.put(key, value);
@@ -171,7 +164,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 			}
 		}
 		//Write the changes to the backups
-		gm.sendUpdates(new HashtableUpdate(id, key, value, getBinding()));
+		gm.sendUpdates(new HashtableUpdate(id, key, value, getBinding(), clock));
 	}
 
 	// Remove the item out of storage
@@ -181,20 +174,20 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 				RMItem temp = (RMItem)openTransactions.get(id).remove(key);
 				if (temp == null) { //The value was not stored in the temporary hashtable, but in m_itemHT
 					Trace.info("MID::item was not in the temporary hashtable.");
-					gm.sendUpdates(new HashtableUpdate(id, key, null, getBinding()));
+					gm.sendUpdates(new HashtableUpdate(id, key, null, getBinding(), null));
 					return (RMItem)m_itemHT.get(key);
 				}
 				// The value is in the temp HT
 				
 				else{
-				 gm.sendUpdates(new HashtableUpdate(id,key,null, getBinding()));
+				 gm.sendUpdates(new HashtableUpdate(id,key,null, getBinding(), null));
 				 return temp;
 				}
 			}
 		}
 	}
 	
-	public void start(int tid) throws RemoteException{
+	public void start(int tid, ClientMidClock clock) throws RemoteException{
 		synchronized (openTransactions) {
 			if (openTransactions.containsKey(tid) == false)
 			{
@@ -202,7 +195,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 				boolean success = false;
 				while (!success) {
 					try {
-						rmFlights.start(tid);
+						rmFlights.start(tid, clock);
 						success = true;
 					}
 					catch(ConnectException er) {
@@ -212,7 +205,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 				success = false;
 				while (!success) {
 					try {
-						rmCars.start(tid);
+						rmCars.start(tid, clock);
 						success = true;
 					}
 					catch (ConnectException er) {
@@ -222,7 +215,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 				success = false;
 				while (!success) {
 					try {
-						rmRooms.start(tid);
+						rmRooms.start(tid, clock);
 						success = true;
 					}
 					catch (ConnectException er) {
@@ -237,12 +230,12 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 		}
 	}
 
-	public void commit(int tid) throws RemoteException, InvalidTransactionException, TransactionAbortedException{
+	public void commit(int tid, ClientMidClock clock) throws RemoteException, InvalidTransactionException, TransactionAbortedException{
 		tM.commit(tid);
 		boolean success = false;
 		while(!success) {
 			try {
-				rmFlights.commit(tid);
+				rmFlights.commit(tid, clock);
 				success = true;
 			}
 			catch (ConnectException er) {
@@ -252,7 +245,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 		success = false;
 		while(!success) {
 			try {
-				rmCars.commit(tid);
+				rmCars.commit(tid, clock);
 				success = true;
 			}
 			catch (ConnectException er) {
@@ -262,7 +255,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 		success = false;
 		while(!success) {
 			try {
-				rmRooms.commit(tid);
+				rmRooms.commit(tid, clock);
 				success = true;
 			}
 			catch (ConnectException er) {
@@ -310,16 +303,15 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 				throw new InvalidTransactionException(tid);
 		}
 	}
-	public void abort(int tid) throws RemoteException, InvalidTransactionException{
+	public void abort(int tid, ClientMidClock clock) throws RemoteException, InvalidTransactionException{
 		tM.abort(tid);
-		//tmAbort(tid);
 	}
 
-	public void tmAbort (int tid) throws RemoteException, InvalidTransactionException{
+	public void tmAbort (int tid, ClientMidClock clock) throws RemoteException, InvalidTransactionException{
 		boolean success = false;
 		while(!success) {
 			try {
-				rmFlights.abort(tid);
+				rmFlights.abort(tid, clock);
 				success = true;
 			}
 			catch (ConnectException er) {
@@ -329,7 +321,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 		success = false;
 		while(!success) {
 			try {
-				rmCars.abort(tid);
+				rmCars.abort(tid, clock);
 				success = true;
 			}
 			catch (ConnectException er) {
@@ -339,7 +331,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 		success = false;
 		while(!success) {
 			try {
-				rmRooms.abort(tid);
+				rmRooms.abort(tid, clock);
 				success = true;
 			}
 			catch (ConnectException er) {
@@ -359,7 +351,6 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 		System.out.println("Aborted transaction " + tid);
 	}
 
-
 	/***********************************
                 FLIGHTS
 	 ***********************************/
@@ -375,7 +366,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 			boolean success = false;
 			while(!success) {
 				try {
-					rmFlights.addFlight(id,flightNum,flightSeats,flightPrice);
+					rmFlights.addFlight(id,flightNum,flightSeats,flightPrice, clock.increment());
 					success = true;
 				}
 				catch (ConnectException er) {
@@ -394,7 +385,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 
 
 
-	public boolean deleteFlight(int id, int flightNum)
+	public boolean deleteFlight(int id, int flightNum, ClientMidClock clock)
 			throws RemoteException, InvalidTransactionException
 			{
 		synchronized(openTransactions){
@@ -404,7 +395,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 			boolean success = false;
 			while(!success) {
 				try {
-					return (rmFlights.deleteFlight(id, flightNum));
+					return (rmFlights.deleteFlight(id, flightNum, clock));
 				}
 				catch (ConnectException er) {
 					System.out.println("Cannot connect to Rooms RM");
@@ -468,7 +459,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 
 
 	// Adds flight reservation to this customer.
-	public boolean reserveFlight(int id, int customerID, int flightNum)
+	public boolean reserveFlight(int id, int customerID, int flightNum, ClientMidClock clock)
 			throws RemoteException, InvalidTransactionException
 			{
 		synchronized(openTransactions){
@@ -479,7 +470,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 			boolean success = false;
 			while(!success) {
 				try {
-					result = rmFlights.reserveFlight(id,customerID,flightNum);
+					result = rmFlights.reserveFlight(id,customerID,flightNum, clock);
 					success = true;
 				}
 				catch (ConnectException er) {
@@ -488,7 +479,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 			}
 			if (result)
 			{
-				reserveItem(id, customerID, Flight.getKey(flightNum), String.valueOf(flightNum), queryFlightPrice(id,flightNum));
+				reserveItem(id, customerID, Flight.getKey(flightNum), String.valueOf(flightNum), queryFlightPrice(id,flightNum), clock);
 				return result;
 			}
 			else {return result; }
@@ -551,7 +542,7 @@ return true;
 			boolean success = false;
 			while(!success) {
 				try {
-					return rmCars.addCars(id,location,count,price);
+					return rmCars.addCars(id,location,count,price, clock.increment());
 				}
 				catch (ConnectException er) {
 					System.out.println("Cannot connect to Rooms RM");
@@ -568,7 +559,7 @@ return true;
 			}
 	
     // Delete cars from a location
-    public boolean deleteCars(int id, String location)
+    public boolean deleteCars(int id, String location, ClientMidClock clock)
     throws RemoteException, InvalidTransactionException
     {
 		synchronized(openTransactions){
@@ -578,7 +569,7 @@ return true;
 					boolean success = false;
 					while(!success) {
 						try {
-							return (rmCars.deleteCars(id,location));
+							return (rmCars.deleteCars(id,location, clock));
 						}
 						catch (ConnectException er) {
 							System.out.println("Cannot connect to Rooms RM");
@@ -639,7 +630,7 @@ return true;
 			}
 
 
-	public boolean reserveCar(int id, int customerID, String location)
+	public boolean reserveCar(int id, int customerID, String location, ClientMidClock clock)
 			throws RemoteException, InvalidTransactionException
 			{
 		synchronized(openTransactions){
@@ -656,7 +647,7 @@ return true;
 						boolean success = false;
 						while(!success) {
 							try {
-								result = rmCars.reserveCar(id,customerID,location);
+								result = rmCars.reserveCar(id,customerID,location, clock);
 								success = true;
 							}
 							catch (ConnectException er) {
@@ -665,7 +656,7 @@ return true;
 						}
 						if (result)
 						{
-							reserveItem(id, customerID, Car.getKey(location), location, queryCarsPrice(id, location));
+							reserveItem(id, customerID, Car.getKey(location), location, queryCarsPrice(id, location), clock);
 							return result;
 						}
 						else { return result; }
@@ -697,7 +688,7 @@ return true;
 			boolean success = false;
 			while(!success) {
 				try {
-					return rmRooms.addRooms(id,location,count,price);
+					return rmRooms.addRooms(id,location,count,price, clock.increment());
 				}
 				catch (ConnectException er) {
 					System.out.println("Cannot connect to Rooms RM");
@@ -713,7 +704,7 @@ return true;
 			}
 	
 	// Delete rooms from a location
-    public boolean deleteRooms(int id, String location)
+    public boolean deleteRooms(int id, String location, ClientMidClock clock)
     throws RemoteException, InvalidTransactionException
     {
 		synchronized(openTransactions){
@@ -723,7 +714,7 @@ return true;
 				boolean success = false;
 				while(!success) {
 					try {
-						return (rmRooms.deleteRooms(id, location));
+						return (rmRooms.deleteRooms(id, location, clock));
 					}
 					catch (ConnectException er) {
 						System.out.println("Cannot connect to Rooms RM");
@@ -784,7 +775,7 @@ return true;
 
 
 	// Adds room reservation to this customer.
-	public boolean reserveRoom(int id, int customerID, String location)
+	public boolean reserveRoom(int id, int customerID, String location, ClientMidClock clock)
 			throws RemoteException, InvalidTransactionException
 			{
 		synchronized(openTransactions){
@@ -796,7 +787,7 @@ return true;
 			boolean success = false;
 			while(!success) {
 				try {
-					result = rmRooms.reserveRoom(id,customerID,location);
+					result = rmRooms.reserveRoom(id,customerID,location, clock);
 					success = true;
 				}
 				catch (ConnectException er) {
@@ -805,7 +796,8 @@ return true;
 			}
 			if (result)
 			{
-				reserveItem(id, customerID, Hotel.getKey(location), location, queryRoomsPrice(id, location));
+				reserveItem(id, customerID, Hotel.getKey(location), location, queryRoomsPrice(id, location), clock);
+				received.add(clock);
 				return result;
 			}
 			else
@@ -821,7 +813,7 @@ return true;
         (same code as in ResourceManager)
 	 ***************************************/
 
-	public int newCustomer(int id)
+	public int newCustomer(int id, ClientMidClock clock)
 			throws RemoteException, InvalidTransactionException
 			{
 		synchronized(openTransactions){
@@ -835,7 +827,8 @@ return true;
 		if (tM.newCustomer(id,cid))
 		{
 			Customer cust = new Customer( cid );
-			writeData( id, cust.getKey(), cust );
+			writeData( id, cust.getKey(), cust, clock);
+			received.add(clock);
 			Trace.info("Middleware::newCustomer(" + cid + ") returns ID=" + cid );
 
 			return cid;
@@ -848,9 +841,10 @@ return true;
 
 
 	// I opted to pass in customerID instead. This makes testing easier
-	public boolean newCustomer(int id, int customerID )
+	public boolean newCustomer(int id, int customerID, ClientMidClock clock)
 			throws RemoteException, InvalidTransactionException
 			{
+		if (received.contains(clock));
 		synchronized(openTransactions){
 			if (openTransactions.containsKey(id) == false){ throw new InvalidTransactionException(id); }
 		}
@@ -858,14 +852,15 @@ return true;
 		Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
 		if ( cust == null && tM.newCustomer(id,customerID)) {
 			cust = new Customer(customerID);
-			writeData( id, cust.getKey(), cust );
+			writeData( id, cust.getKey(), cust, clock );
+			received.add(clock);
 			Trace.info("INFO: Middleware::newCustomer(" + id + ", " + customerID + ") created a new customer" );
 
 			/***************************************/
 			// Make the other RMs add a new customer
-			rmCars.newCustomer(id,customerID);
-			rmRooms.newCustomer(id,customerID);
-			rmFlights.newCustomer(id,customerID);
+			rmCars.newCustomer(id,customerID, clock);
+			rmRooms.newCustomer(id,customerID, clock);
+			rmFlights.newCustomer(id,customerID, clock);
 			/*********************************/
 
 			return true;
@@ -879,9 +874,10 @@ return true;
 
 
 	// Deletes customer from the database.
-	public boolean deleteCustomer(int id, int customerID)
+	public boolean deleteCustomer(int id, int customerID, ClientMidClock clock)
 			throws RemoteException, InvalidTransactionException
 			{
+		if (received.contains(clock)) return true;
 		synchronized(openTransactions){
 			if (openTransactions.containsKey(id) == false){ throw new InvalidTransactionException(id); }
 		}
@@ -889,6 +885,7 @@ return true;
 		if(tM.deleteCustomer(id,customerID))
 		{
 			Customer cust = (Customer) readData( id, Customer.getKey(customerID) );
+			received.add(clock);
 			if ( cust == null ) {
 				Trace.warn("Middleware::deleteCustomer(" + id + ", " + customerID + ") failed--customer doesn't exist" );
 				return false;
@@ -999,12 +996,14 @@ return true;
 
 
 	// reserve an item
-	protected synchronized boolean reserveItem(int id, int customerID, String key, String location, int price) {
+	protected synchronized boolean reserveItem(int id, int customerID, String key, String location, int price, ClientMidClock clock) {
+		if (received.contains(clock)) return true;
 		Trace.info("Middleware::reserveItem( " + id + ", customer=" + customerID + ", " +key+ ", "+location+" ) called" );
 		Customer cust = (Customer)readData(id, Customer.getKey(customerID)).clone();
 		cust.reserve(key, location, price);
-		writeData(id, cust.getKey(), cust);
+		writeData(id, cust.getKey(), cust, clock);
 		Trace.info("Middleware::reserveItem( " + id + ", " + customerID + ", " + key + ", " +location+") succeeded" );
+		received.add(clock);
 		return true;
 	}
 
@@ -1012,7 +1011,7 @@ return true;
 
 
 	// Reserve an itinerary
-	public boolean itinerary(int id,int customer,Vector flightNumbers,String location,boolean car,boolean room)
+	public boolean itinerary(int id,int customer,Vector flightNumbers,String location,boolean car,boolean room, ClientMidClock clock)
 			throws RemoteException, InvalidTransactionException
 			{
 		boolean carBool = true;
@@ -1021,16 +1020,16 @@ return true;
 
 		if (car==true)
 		{
-			carBool = reserveCar(id,customer,location);
+			carBool = reserveCar(id,customer,location, clock);
 
 			if (room==true)
 			{
-				roomBool = reserveRoom(id,customer,location);
+				roomBool = reserveRoom(id,customer,location, clock);
 
 				for (int i = 0; i < flightNumbers.size(); i++)
 				{
 					int flightNum = Integer.parseInt((String)flightNumbers.get(i));
-					flightBool = reserveFlight(id,customer,flightNum);	
+					flightBool = reserveFlight(id,customer,flightNum, clock);	
 				}
 			}
 
@@ -1039,7 +1038,7 @@ return true;
 				for (int i = 0; i < flightNumbers.size(); i++)
 				{
 					int flightNum = Integer.parseInt((String)flightNumbers.get(i));
-					flightBool = reserveFlight(id,customer,flightNum);
+					flightBool = reserveFlight(id,customer,flightNum, clock);
 				}
 			}
 		}
@@ -1049,12 +1048,12 @@ return true;
 		{
 			if (room == true)
 			{
-				roomBool = reserveRoom(id,customer,location);
+				roomBool = reserveRoom(id,customer,location, clock);
 
 				for (int i = 0; i < flightNumbers.size(); i++)
 				{
 					int flightNum = Integer.parseInt((String)flightNumbers.get(i));
-					flightBool = reserveFlight(id,customer,flightNum);
+					flightBool = reserveFlight(id,customer,flightNum, clock);
 				}
 			}
 
@@ -1063,7 +1062,7 @@ return true;
 				for (int i = 0; i < flightNumbers.size(); i++)
 				{
 					int flightNum = Integer.parseInt((String)flightNumbers.get(i));
-					flightBool = reserveFlight(id,customer,flightNum);
+					flightBool = reserveFlight(id,customer,flightNum, clock);
 				}
 			}
 		}

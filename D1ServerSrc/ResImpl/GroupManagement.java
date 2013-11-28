@@ -140,16 +140,16 @@ public class GroupManagement extends ReceiverAdapter {
 		        	if (update.getValue() == null) { //This is a removal
 		        		rm.removeData(update.getTid(), update.getKey());
 		        	}
-		        	else rm.writeData(update.getTid(), update.getKey(), update.getValue());
+		        	else rm.writeData(update.getTid(), update.getKey(), update.getValue(), null);
 		        }
 		        else if (obj.getClass().equals(StartMessage.class)) {
-		        	rm.start(((StartMessage)obj).getTid());
+		        	rm.start(((StartMessage)obj).getTid(), null);
 		        }
 		        else if (obj.getClass().equals(CommitMessage.class)) {
-		        	rm.commit(((CommitMessage)obj).getTid());
+		        	rm.commit(((CommitMessage)obj).getTid(), null);
 		        }
 		        else if (obj.getClass().equals(AbortMessage.class)) {
-		        	rm.abort(((AbortMessage)obj).getTid());
+		        	rm.abort(((AbortMessage)obj).getTid(), null);
 		        }
 		        else if (obj.getClass().equals(ImThePrimary.class)) {
 		        	ImThePrimary message = (ImThePrimary)obj;

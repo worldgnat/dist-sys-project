@@ -2,8 +2,8 @@ package ResInterface;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
-
 import java.util.*;
+
 import exceptions.*;
 /**
 * Simplified version from CSE 593 Univ. of Washington
@@ -23,17 +23,17 @@ import exceptions.*;
 
 public interface ResourceManager extends Remote
 {
-	public void start(int tid) throws RemoteException;
+	public void start(int tid, ClientMidClock clock) throws RemoteException;
 	public boolean shutdown() throws RemoteException;
         /*
          * Commits the given transaction on this RM.
          */
-        public void commit(int tid) throws RemoteException, InvalidTransactionException, TransactionAbortedException;
+        public void commit(int tid, ClientMidClock clock) throws RemoteException, InvalidTransactionException, TransactionAbortedException;
         
         /*
          * Aborts the given transaction on this RM.
          */
-        public void abort(int tid) throws RemoteException, InvalidTransactionException;
+        public void abort(int tid, ClientMidClock clock) throws RemoteException, InvalidTransactionException;
         
     /* Add seats to a flight. In general this will be used to create a new
 * flight, but it should be possible to add seats to an existing flight.
@@ -42,30 +42,30 @@ public interface ResourceManager extends Remote
 *
 * @return success.
 */
-    public boolean addFlight(int id, int flightNum, int flightSeats, int flightPrice)
+    public boolean addFlight(int id, int flightNum, int flightSeats, int flightPrice, ClientMidClock clock)
         throws RemoteException;
     
     /* Add cars to a location.
 * This should look a lot like addFlight, only keyed on a string location
 * instead of a flight number.
 */
-    public boolean addCars(int id, String location, int numCars, int price)
+    public boolean addCars(int id, String location, int numCars, int price, ClientMidClock clock)
         throws RemoteException;
    
     /* Add rooms to a location.
 * This should look a lot like addFlight, only keyed on a string location
 * instead of a flight number.
 */
-    public boolean addRooms(int id, String location, int numRooms, int price)
+    public boolean addRooms(int id, String location, int numRooms, int price, ClientMidClock clock)
         throws RemoteException;                         
 
                         
     /* new customer just returns a unique customer identifier */
-    public int newCustomer(int id)
+    public int newCustomer(int id, ClientMidClock clock)
         throws RemoteException;
     
     /* new customer with providing id */
-    public boolean newCustomer(int id, int cid)
+    public boolean newCustomer(int id, int cid, ClientMidClock clock)
     throws RemoteException;
 
     /**
@@ -76,7 +76,7 @@ public interface ResourceManager extends Remote
 *
 * @return success.
 */
-    public boolean deleteFlight(int id, int flightNum)
+    public boolean deleteFlight(int id, int flightNum, ClientMidClock clock)
         throws RemoteException;
     
     /* Delete all Cars from a location.
@@ -84,7 +84,7 @@ public interface ResourceManager extends Remote
 *
 * @return success
 */                
-    public boolean deleteCars(int id, String location)
+    public boolean deleteCars(int id, String location, ClientMidClock clock)
         throws RemoteException;
 
     /* Delete all Rooms from a location.
@@ -92,11 +92,11 @@ public interface ResourceManager extends Remote
 *
 * @return success
 */
-    public boolean deleteRooms(int id, String location)
+    public boolean deleteRooms(int id, String location, ClientMidClock clock)
         throws RemoteException;
     
     /* deleteCustomer removes the customer and associated reservations */
-    public boolean deleteCustomer(int id,int customer)
+    public boolean deleteCustomer(int id,int customer, ClientMidClock clock)
         throws RemoteException;
 
     /* queryFlight returns the number of empty seats. */
@@ -128,20 +128,20 @@ public interface ResourceManager extends Remote
         throws RemoteException;
 
     /* Reserve a seat on this flight*/
-    public boolean reserveFlight(int id, int customer, int flightNumber)
+    public boolean reserveFlight(int id, int customer, int flightNumber, ClientMidClock clock)
         throws RemoteException;
 
     /* reserve a car at this location */
-    public boolean reserveCar(int id, int customer, String location)
+    public boolean reserveCar(int id, int customer, String location, ClientMidClock clock)
         throws RemoteException;
 
     /* reserve a room certain at this location */
-    public boolean reserveRoom(int id, int customer, String locationd)
+    public boolean reserveRoom(int id, int customer, String location, ClientMidClock clock)
         throws RemoteException;
 
 
     /* reserve an itinerary */
-    public boolean itinerary(int id,int customer,Vector flightNumbers,String location, boolean Car, boolean Room)
+    public boolean itinerary(int id,int customer,Vector flightNumbers,String location, boolean Car, boolean Room, ClientMidClock clock)
         throws RemoteException;
                             
 }
