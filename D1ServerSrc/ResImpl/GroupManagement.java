@@ -86,7 +86,7 @@ public class GroupManagement extends ReceiverAdapter {
         Collections.sort(members);
         if (channel.getAddress().equals(members.get(0))) {
         	//Hey, look! We're the primary copy! Let's get this show on the road.
-        	System.out.println("[GM - INFO] " + channel.getAddressAsString() + " is officially the king of the " + channel.getName() + "channel now.");
+        	System.out.println("[GM - INFO] " + channel.getAddressAsString() + " is officially the king of the " + channel.getClusterName() + "channel now.");
         	primary = true;
         	if (!rm.getClass().equals(Middleware.class)) notifyPrimary();
         }
@@ -115,7 +115,7 @@ public class GroupManagement extends ReceiverAdapter {
     public void notifyPrimary() {
     	try {
     		JChannel midChannel = getChannel("middleware29");
-        	midChannel.send(new Message(null, null, new ImThePrimary(java.net.InetAddress.getLocalHost().getCanonicalHostName(), rm.getPort(), channel.getName())));
+        	midChannel.send(new Message(null, null, new ImThePrimary(java.net.InetAddress.getLocalHost().getCanonicalHostName(), rm.getPort(), channel.getClusterName())));
         	Thread.sleep(100); //This is a horrible solution... but it's past my bedtime.
         	midChannel.close();
     	}
@@ -131,7 +131,7 @@ public class GroupManagement extends ReceiverAdapter {
          * Is the following an abuse of Java reflection and of Object Orientation in general? Probably. Do I care? No. No I don't.
          */
         try {
-	        if (obj.getClass().equals(HashtableUpdate.class) && isThisChannel(obj)) { //This is an update to our RM's hashtable
+	        if (obj.getClass().equals(HashtableUpdate.class)) { //This is an update to our RM's hashtable
 	        	HashtableUpdate update = (HashtableUpdate)obj;
 	        	if (update.getValue() == null) { //This is a removal
 	        		rm.removeData(update.getTid(), update.getKey());
@@ -151,21 +151,6 @@ public class GroupManagement extends ReceiverAdapter {
 	        	ImThePrimary message = (ImThePrimary)obj;
 	        	rm.setPrimary(message.getHostname(), message.getPort(), message.getChannel());
 	        }
-//	        else if (obj.getClass().equals(RequestPrimary.class)) {
-//	        	RequestPrimary request = (RequestPrimary)obj;
-//	        	if (primary) {
-//	        		try { 
-//		        		//Bind to RMI and send a message.
-//		        		Registry registry = LocateRegistry.getRegistry(request.getHostname(), request.getPort());
-//		        		Middleware notify = (Middleware) registry.lookup("middleware29");
-//		        		notify.setPrimary(java.net.InetAddress.getLocalHost().getCanonicalHostName(), rm.getPort(), channel.getName());
-//	        		}
-//	        		catch (Exception er ) {
-//	        			System.err.println("[GM - ERROR] Failed to connect to middleware to notify of primary status.");
-//	        			er.printStackTrace();
-//	        		}
-//	        	}
-//	        }
         }
         catch(RemoteException er) {
         	System.err.println("[GM - ERROR] Problem running message on RM.");
@@ -179,10 +164,6 @@ public class GroupManagement extends ReceiverAdapter {
         }
     }
     
-    public boolean isThisChannel(Object obj) {
-    	return ((RMMessage)obj).getSourceChannel().equals(channel.getName());
-    }
-
     public void setState(byte[] new_state) {
     	try {
             rm =(ResourceManagerImpl)Util.objectFromByteBuffer(new_state);
@@ -193,21 +174,21 @@ public class GroupManagement extends ReceiverAdapter {
         }
     }
     
-    public JChannel getChannel(String channel) {
+    public JChannel getChannel(String channelName) {
     	JChannel tempChannel;
-    	if (!openChannels.containsKey(channel)) {
+    	if (!openChannels.containsKey(channelName)) {
     		try {
-    			tempChannel = new JChannel(configs.get(channel));
+    			tempChannel = new JChannel(configs.get(channelName));
     			//tempChannel.setReceiver(this);
-    			tempChannel.connect(channel);
-    			openChannels.put(channel, tempChannel);
+    			tempChannel.connect(channelName);
+    			openChannels.put(channelName, tempChannel);
     		}
     		catch (Exception er ) {
     			System.err.println("[GM - ERROR] Failed to connect to channel " + channel);
     			tempChannel = null;
     		}
     	}
-    	else tempChannel = openChannels.get(channel);
+    	else tempChannel = openChannels.get(channelName);
     	return tempChannel;
     }
     
