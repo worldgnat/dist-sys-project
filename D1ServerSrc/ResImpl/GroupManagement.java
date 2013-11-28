@@ -62,7 +62,7 @@ public class GroupManagement extends ReceiverAdapter {
 	        channel.connect(channelName);
 	        channel.getState(null, 10000);
 	        channel.setDiscardOwnMessages(true); //I love JGroups. I really do.
-	        
+	        notifyPrimary();
 		}
 		catch(Exception er) {
 			er.printStackTrace();
@@ -89,6 +89,14 @@ public class GroupManagement extends ReceiverAdapter {
         	//Hey, look! We're the primary copy! Let's get this show on the road.
         	System.out.println("[GM - INFO] " + channel.getAddressAsString() + " is officially the king of the " + channel.getName() + "channel now.");
         	primary = true;
+        	try {
+        		JChannel midChannel = getChannel("middleware29");
+	        	midChannel.send(new Message(null, null, new ImThePrimary(java.net.InetAddress.getLocalHost().getCanonicalHostName(), rm.getPort(), channel.getName())));
+	        	midChannel.close();
+        	}
+        	catch (Exception er) {
+        		System.err.println("[GM - ERROR] Failed to notify Middleware of primary status.");
+        	}
         }
         else primary = false;
     }
@@ -112,15 +120,14 @@ public class GroupManagement extends ReceiverAdapter {
     	}
     }
     
-    public void findPrimary(String channel) {
-    	//new Thread(new PrimarySetter(channel, rm, configs.get(channel))).start();
-    	JChannel tempChannel = getChannel(channel);
+    public void notifyPrimary() {
     	try {
-	    	tempChannel.send(new Message(null, null, new RequestPrimary(java.net.InetAddress.getLocalHost().getCanonicalHostName(), rm.getPort())));
-	    	tempChannel.close();
+    		JChannel midChannel = getChannel("middleware29");
+        	midChannel.send(new Message(null, null, new ImThePrimary(java.net.InetAddress.getLocalHost().getCanonicalHostName(), rm.getPort(), channel.getName())));
+        	midChannel.close();
     	}
-    	catch(Exception er) {
-    		System.err.println("[GM - ERROR] Can't send find primary request.");
+    	catch (Exception er) {
+    		System.err.println("[GM - ERROR] Failed to notify Middleware of primary status.");
     	}
     }
  
@@ -137,30 +144,34 @@ public class GroupManagement extends ReceiverAdapter {
 	        	}
 	        	else rm.writeData(update.getTid(), update.getKey(), update.getValue());
 	        }
-	        else if (obj.getClass().equals(StartMessage.class) && isThisChannel(obj)) {
+	        else if (obj.getClass().equals(StartMessage.class)) {
 	        	rm.start(((StartMessage)obj).getTid());
 	        }
-	        else if (obj.getClass().equals(CommitMessage.class) && isThisChannel(obj)) {
+	        else if (obj.getClass().equals(CommitMessage.class)) {
 	        	rm.commit(((CommitMessage)obj).getTid());
 	        }
-	        else if (obj.getClass().equals(AbortMessage.class) && isThisChannel(obj)) {
+	        else if (obj.getClass().equals(AbortMessage.class)) {
 	        	rm.abort(((AbortMessage)obj).getTid());
 	        }
-	        else if (obj.getClass().equals(RequestPrimary.class)) {
-	        	RequestPrimary request = (RequestPrimary)obj;
-	        	if (primary) {
-	        		try { 
-		        		//Bind to RMI and send a message.
-		        		Registry registry = LocateRegistry.getRegistry(request.getHostname(), request.getPort());
-		        		Middleware notify = (Middleware) registry.lookup("middleware29");
-		        		notify.setPrimary(java.net.InetAddress.getLocalHost().getCanonicalHostName(), rm.getPort(), channel.getName());
-	        		}
-	        		catch (Exception er ) {
-	        			System.err.println("[GM - ERROR] Failed to connect to middleware to notify of primary status.");
-	        			er.printStackTrace();
-	        		}
-	        	}
+	        else if (obj.getClass().equals(ImThePrimary.class)) {
+	        	ImThePrimary message = (ImThePrimary)obj;
+	        	rm.setPrimary(message.getHostname(), message.getPort(), message.getChannel());
 	        }
+//	        else if (obj.getClass().equals(RequestPrimary.class)) {
+//	        	RequestPrimary request = (RequestPrimary)obj;
+//	        	if (primary) {
+//	        		try { 
+//		        		//Bind to RMI and send a message.
+//		        		Registry registry = LocateRegistry.getRegistry(request.getHostname(), request.getPort());
+//		        		Middleware notify = (Middleware) registry.lookup("middleware29");
+//		        		notify.setPrimary(java.net.InetAddress.getLocalHost().getCanonicalHostName(), rm.getPort(), channel.getName());
+//	        		}
+//	        		catch (Exception er ) {
+//	        			System.err.println("[GM - ERROR] Failed to connect to middleware to notify of primary status.");
+//	        			er.printStackTrace();
+//	        		}
+//	        	}
+//	        }
         }
         catch(RemoteException er) {
         	System.err.println("[GM - ERROR] Problem running message on RM.");
