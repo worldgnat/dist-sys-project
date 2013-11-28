@@ -1,6 +1,8 @@
 package groupComm;
 
-public class ImThePrimary {
+import java.io.Serializable;
+
+public class ImThePrimary implements Serializable {
 	String hostname;
 	int port;
 	String channel;
