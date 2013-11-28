@@ -133,17 +133,6 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 		System.out.println("Bound new registry " + binding);
 		return (ResourceManager) registryFlights.lookup(binding);
 	}
-	/*
-	public void findPrimary(ResourceManager rm, String channel) {
-		ImThePrimary primary = gm.findPrimary(channel);
-		try {
-			rm = bindRM(primary.getHostname(), primary.getPort(), channel);
-		}
-		catch (Exception er) {
-			Trace.error("[Middleware] - Could not rebind to primary " + channel +" rm.");
-			er.printStackTrace();
-		}
-	}*/
 
 	public boolean shutdown() throws RemoteException{
 		rmCars.shutdown();
@@ -210,26 +199,34 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 			if (openTransactions.containsKey(tid) == false)
 			{
 				tM.start(tid);
-				try {
-					rmFlights.start(tid);
+				boolean success = false;
+				while (!success) {
+					try {
+						rmFlights.start(tid);
+						success = true;
+					}
+					catch(ConnectException er) {
+						System.out.println("Cannot connect to Flights RM");
+					}
 				}
-				catch(ConnectException er) {
-					System.out.println("Cannot connect to Flights RM");
-					//findPrimary(rmFlights, flightsChannel);
+				success = false;
+				while (!success) {
+					try {
+						rmCars.start(tid);
+						success = true;
+					}
+					catch (ConnectException er) {
+						System.out.println("Cannot connect to Cars RM");
+					}
 				}
-				try {
-					rmCars.start(tid);
-				}
-				catch (ConnectException er) {
-					System.out.println("Cannot connect to Cars RM");
-					//findPrimary(rmCars, carsChannel);
-				}
-				try {
-					rmRooms.start(tid);
-				}
-				catch (ConnectException er) {
-					System.out.println("Cannot connect to Rooms RM");
-					//findPrimary(rmRooms, roomsChannel);
+				success = false;
+				while (!success) {
+					try {
+						rmRooms.start(tid);
+					}
+					catch (ConnectException er) {
+						System.out.println("Cannot connect to Rooms RM");
+					}
 				}
 				openTransactions.put(tid, new TemporaryHT());
 				System.out.println("Started transaction " + tid);
@@ -241,9 +238,33 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 
 	public void commit(int tid) throws RemoteException, InvalidTransactionException, TransactionAbortedException{
 		tM.commit(tid);
-		rmFlights.commit(tid);
-		rmCars.commit(tid);
-		rmRooms.commit(tid);
+		boolean success = false;
+		while(!success) {
+			try {
+				rmFlights.commit(tid);
+			}
+			catch (ConnectException er) {
+				System.out.println("Cannot connect to Rooms RM");
+			}
+		}
+		success = false;
+		while(!success) {
+			try {
+				rmCars.commit(tid);
+			}
+			catch (ConnectException er) {
+				System.out.println("Cannot connect to Rooms RM");
+			}
+		}
+		success = false;
+		while(!success) {
+			try {
+				rmRooms.commit(tid);
+			}
+			catch (ConnectException er) {
+				System.out.println("Cannot connect to Rooms RM");
+			}
+		}
 
 		synchronized (openTransactions){
 			if (openTransactions.containsKey(tid))
@@ -291,9 +312,34 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 	}
 
 	public void tmAbort (int tid) throws RemoteException, InvalidTransactionException{
-		rmFlights.abort(tid);
-		rmCars.abort(tid);
-		rmRooms.abort(tid);
+		boolean success = false;
+		while(!success) {
+			try {
+				rmFlights.abort(tid);
+			}
+			catch (ConnectException er) {
+				System.out.println("Cannot connect to Rooms RM");
+			}
+		}
+		success = false;
+		while(!success) {
+			try {
+				rmCars.abort(tid);
+			}
+			catch (ConnectException er) {
+				System.out.println("Cannot connect to Rooms RM");
+			}
+		}
+		success = false;
+		while(!success) {
+			try {
+				rmRooms.abort(tid);
+			}
+			catch (ConnectException er) {
+				System.out.println("Cannot connect to Rooms RM");
+			}
+		}
+		
 		synchronized(openTransactions){
 			if (openTransactions.containsKey(tid)){
 				openTransactions.remove(tid);
@@ -319,7 +365,15 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 		}
 		if(rmFlights!=null && tM.addFlight(id,flightNum,flightSeats,flightPrice) == true)
 		{
-			rmFlights.addFlight(id,flightNum,flightSeats,flightPrice);
+			boolean success = false;
+			while(!success) {
+				try {
+					rmFlights.addFlight(id,flightNum,flightSeats,flightPrice);
+				}
+				catch (ConnectException er) {
+					System.out.println("Cannot connect to Rooms RM");
+				}
+			}
 			return true;
 		}
 		else
@@ -338,8 +392,18 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 		synchronized(openTransactions){
 			if (openTransactions.containsKey(id) == false){ throw new InvalidTransactionException(id); }
 		}
-		if (tM.deleteFlight(id,flightNum))
-			return (rmFlights.deleteFlight(id, flightNum));
+		if (tM.deleteFlight(id,flightNum)) {
+			boolean success = false;
+			while(!success) {
+				try {
+					return (rmFlights.deleteFlight(id, flightNum));
+				}
+				catch (ConnectException er) {
+					System.out.println("Cannot connect to Rooms RM");
+				}
+			}
+			return false;
+		}
 		else
 		{
 			return false;
@@ -353,8 +417,18 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 		synchronized(openTransactions){
 			if (openTransactions.containsKey(id) == false){ throw new InvalidTransactionException(id); }
 		}
-		if (tM.queryFlight(id,flightNum))
-			return (rmFlights.queryFlight(id, flightNum));
+		if (tM.queryFlight(id,flightNum)){
+			boolean success = false;
+			while(!success) {
+				try {
+					return (rmFlights.queryFlight(id, flightNum));
+				}
+				catch (ConnectException er) {
+					System.out.println("Cannot connect to Rooms RM");
+				}
+			}
+			return -1;
+		}
 		else
 			return -1;
 			}
@@ -368,8 +442,18 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 		synchronized(openTransactions){
 			if (openTransactions.containsKey(id) == false) { throw new InvalidTransactionException(id); }
 		}
-		if (tM.queryFlightPrice(id,flightNum))
-			return (rmFlights.queryFlightPrice(id,flightNum));
+		if (tM.queryFlightPrice(id,flightNum)) {
+			boolean success = false;
+			while(!success) {
+				try {
+					return (rmFlights.queryFlightPrice(id,flightNum));
+				}
+				catch (ConnectException er) {
+					System.out.println("Cannot connect to Rooms RM");
+				}
+			}
+			return -1;
+		}
 		else
 			return -1;
 			}
@@ -383,7 +467,16 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 			if (openTransactions.containsKey(id) == false ){ throw new InvalidTransactionException(id); }
 		}
 		if (tM.reserveFlight(id, customerID, flightNum)) {
-			boolean result = rmFlights.reserveFlight(id,customerID,flightNum);
+			boolean result = false;
+			boolean success = false;
+			while(!success) {
+				try {
+					result = rmFlights.reserveFlight(id,customerID,flightNum);
+				}
+				catch (ConnectException er) {
+					System.out.println("Cannot connect to Rooms RM");
+				}
+			}
 			if (result)
 			{
 				reserveItem(id, customerID, Flight.getKey(flightNum), String.valueOf(flightNum), queryFlightPrice(id,flightNum));
@@ -446,8 +539,16 @@ return true;
 
 		if(rmCars!=null && tM.addCars(id,location,count,price) == true)
 		{
-			rmCars.addCars(id,location,count,price);
-			return true;
+			boolean success = false;
+			while(!success) {
+				try {
+					return rmCars.addCars(id,location,count,price);
+				}
+				catch (ConnectException er) {
+					System.out.println("Cannot connect to Rooms RM");
+				}
+			}
+			return false;
 		}
 		else
 		{
@@ -464,10 +565,19 @@ return true;
 		synchronized(openTransactions){
 			if (openTransactions.containsKey(id) == false){ throw new InvalidTransactionException(id); }
 		}
-				if (tM.deleteCars(id,location))
-           				 return (rmCars.deleteCars(id,location));
-				else
-				return false;
+				if (tM.deleteCars(id,location)) {
+					boolean success = false;
+					while(!success) {
+						try {
+							return (rmCars.deleteCars(id,location));
+						}
+						catch (ConnectException er) {
+							System.out.println("Cannot connect to Rooms RM");
+						}
+					}
+					return false;
+				}
+				else return false;
 			
 		
    }
@@ -479,8 +589,18 @@ return true;
 		synchronized(openTransactions){
 			if (openTransactions.containsKey(id) == false) { throw new InvalidTransactionException(id); }
 		}
-		if (tM.queryCars(id,location))
-		{return (rmCars.queryCars(id,location));}
+		if (tM.queryCars(id,location)) {
+			boolean success = false;
+			while(!success) {
+				try {
+					return (rmCars.queryCars(id,location));
+				}
+				catch (ConnectException er) {
+					System.out.println("Cannot connect to Rooms RM");
+				}
+			}
+			return -1;
+			}
 		else
 			return -1;
 			}
@@ -493,8 +613,18 @@ return true;
 		synchronized(openTransactions){
 			if (openTransactions.containsKey(id) == false){ throw new InvalidTransactionException(id); }
 		}
-		if (tM.queryCarsPrice(id,location))
-		{return (rmCars.queryCarsPrice(id,location));}
+		if (tM.queryCarsPrice(id,location)) {
+			boolean success = false;
+			while(!success) {
+				try {
+					return (rmCars.queryCarsPrice(id,location));
+				}
+				catch (ConnectException er) {
+					System.out.println("Cannot connect to Rooms RM");
+				}
+			}
+			return -1;
+		}
 		else
 			return -1;
 			}
@@ -513,7 +643,16 @@ return true;
 				if (openTransactions.containsKey(id)){
 					if (tM.reserveCar(id,customerID,location))
 					{
-						boolean result = rmCars.reserveCar(id,customerID,location);
+						boolean result = false;
+						boolean success = false;
+						while(!success) {
+							try {
+								result = rmCars.reserveCar(id,customerID,location);
+							}
+							catch (ConnectException er) {
+								System.out.println("Cannot connect to Rooms RM");
+							}
+						}
 						if (result)
 						{
 							reserveItem(id, customerID, Car.getKey(location), location, queryCarsPrice(id, location));
@@ -545,8 +684,16 @@ return true;
 
 		if(rmRooms!=null && tM.addRooms(id,location,count,price) == true)
 		{
-			rmRooms.addRooms(id,location,count,price);
-			return true;
+			boolean success = false;
+			while(!success) {
+				try {
+					return rmRooms.addRooms(id,location,count,price);
+				}
+				catch (ConnectException er) {
+					System.out.println("Cannot connect to Rooms RM");
+				}
+			}
+			return false;
 		}
 		else
 		{
@@ -562,8 +709,18 @@ return true;
 		synchronized(openTransactions){
 			if (openTransactions.containsKey(id) == false){ throw new InvalidTransactionException(id); }
 		}
-			if (tM.deleteRooms(id,location))
-            			return (rmRooms.deleteRooms(id, location));
+			if (tM.deleteRooms(id,location)){
+				boolean success = false;
+				while(!success) {
+					try {
+						return (rmRooms.deleteRooms(id, location));
+					}
+					catch (ConnectException er) {
+						System.out.println("Cannot connect to Rooms RM");
+					}
+				}
+				return false;
+			}		
 			else
 				return false;
 
@@ -576,8 +733,18 @@ return true;
 		synchronized(openTransactions){
 			if (openTransactions.containsKey(id) == false){ throw new InvalidTransactionException(id); }
 		}
-		if (tM.queryRooms(id,location))
-			return (rmRooms.queryRooms(id,location));
+		if (tM.queryRooms(id,location)) {
+			boolean success = false;
+			while(!success) {
+				try {
+					return (rmRooms.queryRooms(id,location));
+				}
+				catch (ConnectException er) {
+					System.out.println("Cannot connect to Rooms RM");
+				}
+			}
+			return -1;
+		}
 		else
 			return -1;
 			}
@@ -589,8 +756,18 @@ return true;
 		synchronized(openTransactions){
 			if (openTransactions.containsKey(id) == false){ throw new InvalidTransactionException(id); }
 		}
-		if (tM.queryRoomsPrice(id,location))
-			return (rmRooms.queryRoomsPrice(id,location));
+		if (tM.queryRoomsPrice(id,location)) {
+			boolean success = false;
+			while(!success) {
+				try {
+					return (rmRooms.queryRoomsPrice(id,location));
+				}
+				catch (ConnectException er) {
+					System.out.println("Cannot connect to Rooms RM");
+				}
+			}
+			return -1;
+		}
 		else
 			return -1;
 			}
@@ -605,7 +782,16 @@ return true;
 		}
 		if (tM.reserveRoom(id,customerID,location))
 		{
-			boolean result = rmRooms.reserveRoom(id,customerID,location);
+			boolean result = false;
+			boolean success = false;
+			while(!success) {
+				try {
+					result = rmRooms.reserveRoom(id,customerID,location);
+				}
+				catch (ConnectException er) {
+					System.out.println("Cannot connect to Rooms RM");
+				}
+			}
 			if (result)
 			{
 				reserveItem(id, customerID, Hotel.getKey(location), location, queryRoomsPrice(id, location));
