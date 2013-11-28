@@ -25,6 +25,7 @@ import org.jgroups.Message;
 import org.jgroups.ReceiverAdapter;
 import org.jgroups.View;
 import org.jgroups.blocks.MessageDispatcher;
+import org.jgroups.blocks.RequestOptions;
 import org.jgroups.blocks.ResponseMode;
 import org.jgroups.util.Util;
 
@@ -103,8 +104,8 @@ public class GroupManagement extends ReceiverAdapter {
     	if (primary) { 
     		try {
     			Message msg = new Message(null, null, update);
-    			channel.send(msg);
-    			//disp.castMessage(null, msg, ResponseMode.GET_ALL, 0);
+    			//channel.send(msg);
+    			disp.castMessage(null, msg, new RequestOptions(ResponseMode.GET_ALL, 0));
     		}
     		catch(Exception er ) {
     			System.err.println("[GM - ERROR] Error sending message to the group.");
