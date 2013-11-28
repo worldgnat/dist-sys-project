@@ -121,6 +121,8 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 				rmCars = bindRM(hostname, port, type);
 				break;
 			}
+			
+			System.out.println("Received notification from " + hostname + " that it is the primary of " + type + " on port " + port);
 		}
 		catch (Exception er) {
 			Trace.warn("MIDDLEWARE: Failed to bind new primary RM.");
