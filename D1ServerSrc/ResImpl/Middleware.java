@@ -121,6 +121,7 @@ public class Middleware implements MiddlewareInt, MiddleResourceManageInt {
 		}
 		catch (Exception er) {
 			Trace.warn("MIDDLEWARE: Failed to bind new primary RM.");
+			er.printStackTrace();
 		}
 	}
 	
